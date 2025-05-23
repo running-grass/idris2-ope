@@ -1,0 +1,10 @@
+[custom.all.ope]
+type = "local"
+path = "."
+ipkg = "ope.ipkg"
+test = "test/test.ipkg"
+
+[custom.all.ope-test]
+type = "local"
+path = "test"
+ipkg = "test.ipkg"
