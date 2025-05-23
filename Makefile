@@ -2,7 +2,7 @@ default: build
 
 .PHONY: build clean check run dev
 
-build: check
+build: 
 	pack build
 
 clean:

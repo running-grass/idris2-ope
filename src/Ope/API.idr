@@ -8,6 +8,8 @@ import Data.List1
 import Data.SortedMap
 import public Ope.API.Core
 
+import Data.Vect.Quantifiers
+import Data.Vect
 import Ope.WAI
 
 ||| 路径匹配函数
@@ -18,7 +20,7 @@ import Ope.WAI
 public export
 matchPath : (segments : List String) -> (path : Path) -> Maybe (List (String, String))
 matchPath [] _ = Nothing
-matchPath [s] (StaticPath path) = 
+matchPath [s] (Static path) = 
   if s == path then Just [] else Nothing
 
 -- 如果有多个路径段，只能匹配组合路径
@@ -71,9 +73,22 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 ||| @ handler 处理器函数
 ||| @ params 从URL中提取的参数
 public export
-executeHandler : (api : API) -> (handler : HandlerType api) -> 
-                   (params : List (String, String)) -> IO Response
-executeHandler (path :> Get _) handler params = PlainTextResponse <$> handler
+revApplyHandler : (params : HList ts) -> (handler : HandlerType' ts rt) -> rt
+revApplyHandler Nil handler = handler
+revApplyHandler (param :: rest) handler = revApplyHandler rest $ handler param
+
+public export
+executeHandler' : (api : API) -> (handler : APIHandlerType' api) -> 
+                   (params : HList (APICaptureTypes api)) -> GetEndpointResultType api
+executeHandler' (path :> (Get res)) handler params = revApplyHandler params handler
+
+
+public export
+executeHandler'' : (api : API) -> (handler : APIHandlerType' api) -> 
+                   (params : HList (APICaptureTypes api)) -> IO Response
+executeHandler'' (path :> (Get res)) handler params = do
+  let res = executeHandler' (path :> (Get res)) handler params
+  pure $ PlainTextResponse res
 
 
 ||| 处理 HTTP 请求
@@ -85,5 +100,5 @@ public export
 processRequest : Server -> Request -> IO Response
 processRequest server req = 
   case findMatchingRoute server req of
-    Just (route, params) => executeHandler route.api route.handler params
+    Just (route, params) => executeHandler'' route.api route.handler ?params
     Nothing => pure notFoundResponse

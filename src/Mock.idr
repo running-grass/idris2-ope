@@ -1,6 +1,5 @@
-||| App模块提供了应用程序示例
-||| 定义了示例API路由和处理函数
-module App
+||| Mock模块提供了交互式编程环境的测试数据
+module Mock
 
 import Ope.Server.Type
 import Ope.API
@@ -17,22 +16,35 @@ import Ope.WAI
 ||| 用户API示例
 ||| 定义了获取用户数量的GET路由
 Api1 : API
-Api1 = StaticPath "users" :> Get Nat
+Api1 = Static "users" :> Get Nat
 
 ||| 文章列表API示例
 ||| 定义了获取文章列表的GET路由
 Api2 : API
-Api2 = StaticPath "posts" :> StaticPath "list" :> Get String
+Api2 = Static "posts" :> Static "list" :> Get String
+
+
+Api3 : API
+Api3 = Static "users" :> Capture "id" Nat :> Get String
+
+Api4 : API
+Api4 = Static "users" :> Static "info" :> Capture "id" Nat :> Static "name" :> Static "age" :> Capture "name" String :> Get String
+
+Api5 : API
+Api5 = Static "info" :> Capture "id" Nat :> Static "age" :> Get String
 
 ||| 用户API处理函数
 ||| 返回固定数值42作为示例
-handler1 : HandlerType Api1
-handler1 = pure 42
+handler1 : APIHandlerType' Api1
+handler1 = 42
 
 ||| 文章列表API处理函数
 ||| 返回固定字符串"hello"作为示例
-handler2 : HandlerType Api2
-handler2 = pure "hello"
+handler2 : APIHandlerType' Api2
+handler2 = "hello"
+
+handler3 : APIHandlerType' Api3
+handler3 id = "hello " ++ show id ++ "!"
 
 ||| 用户API路由定义
 ||| 将API定义和处理函数关联起来
@@ -46,6 +58,7 @@ route2 = MkRoute Api2 handler2
 
 ||| 服务器实例
 ||| 包含所有可用的API路由
+public export
 server : Server
 server = MkServer [route1, route2]
 
@@ -64,10 +77,3 @@ req3 = MkRequest GET "/posts" (SortedMap.fromList []) V10 (SortedMap.fromList []
 ||| 文章列表API测试请求
 req4 : Request
 req4 = MkRequest GET "/posts/list" (SortedMap.fromList []) V10 (SortedMap.fromList []) 0 Nothing (pure ())
-
-||| HTTP 服务器应用入口
-||| 处理所有HTTP请求，将请求路由到对应的处理函数
-||| @ req HTTP请求对象
-public export
-app : Application
-app req = processRequest server req
