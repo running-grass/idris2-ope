@@ -48,7 +48,7 @@ EndpointResult (Get respType) = respType  -- GET 方法返回指定的响应类�
 ||| 例如: API "users/:id" 的 HandlerType 将是 (id -> User)
 public export
 HandlerType : API -> Type
-HandlerType (path :> endpoint) = EndpointResult endpoint
+HandlerType (path :> endpoint) = IO (EndpointResult endpoint)
 -- 这个版本忽略了路径参数，完整版本应该是:
 -- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
 

@@ -72,8 +72,8 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 ||| @ params 从URL中提取的参数
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
-                   (params : List (String, String)) -> Response
-executeHandler (path :> Get _) handler params = PlainTextResponse handler
+                   (params : List (String, String)) -> IO Response
+executeHandler (path :> Get _) handler params = PlainTextResponse <$> handler
 
 
 ||| 处理 HTTP 请求
@@ -82,8 +82,8 @@ executeHandler (path :> Get _) handler params = PlainTextResponse handler
 ||| @ server 服务器实例
 ||| @ req HTTP请求对象
 public export
-processRequest : Server -> Request -> Response
+processRequest : Server -> Request -> IO Response
 processRequest server req = 
   case findMatchingRoute server req of
     Just (route, params) => executeHandler route.api route.handler params
-    Nothing => notFoundResponse
+    Nothing => pure notFoundResponse

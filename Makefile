@@ -9,7 +9,7 @@ clean:
 	pack clean
 
 check:
-	pack typecheck
+	pack typecheck && echo "\n\nCheck done\n\n"
 
 run:
 	pack run

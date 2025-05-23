@@ -27,12 +27,12 @@ Api2 = StaticPath "posts" :> StaticPath "list" :> Get String
 ||| 用户API处理函数
 ||| 返回固定数值42作为示例
 handler1 : HandlerType Api1
-handler1 = 42
+handler1 = pure 42
 
 ||| 文章列表API处理函数
 ||| 返回固定字符串"hello"作为示例
 handler2 : HandlerType Api2
-handler2 = "hello"
+handler2 = pure "hello"
 
 ||| 用户API路由定义
 ||| 将API定义和处理函数关联起来
@@ -70,4 +70,4 @@ req4 = MkRequest GET "/posts/list" (SortedMap.fromList []) V10 (SortedMap.fromLi
 ||| @ req HTTP请求对象
 public export
 app : Application
-app req = pure (processRequest server req)
+app req = processRequest server req
