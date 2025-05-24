@@ -6,29 +6,32 @@ import Data.SortedMap
 
 %default total
 
-namespace Path
-  ||| Path 表示 API 路径的类型安全描述
-  ||| 通过组合 Path 构造器，可以构建出完整的路由路径
-  public export
-  data Path : Type where
-    ||| 静态路径段，例如 "users", "products" 等
-    StaticPath : String -> Path
+||| Path 表示 API 路径的类型安全描述
+||| 通过组合 Path 构造器，可以构建出完整的路由路径
+public export
+data Path : Type where
+  ||| 静态路径段，例如 "users", "products" 等
+  StaticPath : String -> Path
 
-    ||| 捕获路径段，例如 ":d"
-    Capture : String -> Path
-    
-    ||| 路径组合操作符，用于连接两个路径
-    ||| 例如: StaticPath "api" :> StaticPath "users"
-    (:>) : Path -> Path -> Path  -- 组合路径
+  ||| 捕获路径段，例如 ":d"
+  Capture : String -> Path
+  
+  ||| 路径组合操作符，用于连接两个路径
+  ||| 例如: StaticPath "api" :> StaticPath "users"
+  (:>) : Path -> Path -> Path  -- 组合路径
 
-  ||| Endpoint 表示 API 终结点，包含 HTTP 方法和响应类型
-  ||| 参数化类型 resp 用于携带响应类型信息
-  public export
-  data Endpoint : Type -> Type where
-    ||| GET 请求终结点，resp 指定返回类型
-    ||| 例如: Get String, Get User, Get (List Product)
-    Get : (resp : Type) -> Endpoint resp
-    -- 可以扩展添加 Post, Put, Delete 等其他 HTTP 方法
+public export
+implementation FromString Path where
+  fromString = StaticPath
+
+||| Endpoint 表示 API 终结点，包含 HTTP 方法和响应类型
+||| 参数化类型 resp 用于携带响应类型信息
+public export
+data Endpoint : Type -> Type where
+  ||| GET 请求终结点，resp 指定返回类型
+  ||| 例如: Get String, Get User, Get (List Product)
+  Get : (resp : Type) -> Endpoint resp
+  -- 可以扩展添加 Post, Put, Delete 等其他 HTTP 方法
 
 ||| API 类型将路径和终结点组合成完整的 API 描述
 ||| 它是类型安全 API 框架的核心
