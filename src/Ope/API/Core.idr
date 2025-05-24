@@ -13,6 +13,9 @@ namespace Path
   data Path : Type where
     ||| 静态路径段，例如 "users", "products" 等
     StaticPath : String -> Path
+
+    ||| 捕获路径段，例如 ":d"
+    Capture : String -> Path
     
     ||| 路径组合操作符，用于连接两个路径
     ||| 例如: StaticPath "api" :> StaticPath "users"
@@ -66,7 +69,7 @@ HandlerType (path :-> endpoint) = Params -> IO (EndpointResult endpoint)
 ||| 将 API 定义与对应的处理器函数关联起来
 public export
 record Route where
-  constructor MkRoute
+  constructor (:=>)
   ||| API 定义，描述路径和端点
   api: API
   ||| 处理器函数，类型由 API 定义决定
@@ -78,4 +81,3 @@ public export
 data Server : Type where
   ||| 创建服务器实例，包含路由列表
   MkServer : (routes : List Route) -> Server
-

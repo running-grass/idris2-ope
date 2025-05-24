@@ -11,3 +11,6 @@ infixr 5 :->
 -- 操作符 :<|> 优先级定义
 public export
 infixr 4 :<|>
+
+public export
+infixr 5 :=>

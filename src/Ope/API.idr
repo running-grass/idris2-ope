@@ -10,6 +10,10 @@ import public Ope.API.Core
 
 import Ope.WAI
 
+fillDefault: Lazy a -> Maybe a -> Maybe a
+fillDefault def Nothing = Just def
+fillDefault _ (Just a) = Just a
+
 ||| 路径匹配函数
 ||| 检查请求路径段是否匹配 API 路径定义
 ||| 如果匹配成功，返回提取的路径参数
@@ -19,13 +23,8 @@ public export
 matchPath : Maybe Params -> (segments : List String) -> (path : Path) -> Maybe Params
 matchPath Nothing [] _ = Nothing
 matchPath prevParams [s] (StaticPath path) = 
-    if s == path then Just nextParams else Nothing
-    where
-    nextParams : Params
-    nextParams = case prevParams of
-        Just params => params
-        Nothing => emptyParams
-
+    if s == path then (fillDefault emptyParams prevParams) else Nothing
+matchPath prevParams [s] (Capture key) = insert key s <$> fillDefault emptyParams prevParams
 -- 如果有多个路径段，只能匹配组合路径
 matchPath prevParams (s :: segments) (path :> rest) = 
   case matchPath prevParams [s] path of

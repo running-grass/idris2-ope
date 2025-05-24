@@ -5,6 +5,14 @@ module Main
 import Ope.Server.Type
 import Ope.Server
 import App
+import Ope.API
+
+||| HTTP 服务器应用入口
+||| 处理所有HTTP请求，将请求路由到对应的处理函数
+||| @ req HTTP请求对象
+public export
+app : Application
+app req = processRequest server req
 
 ||| 程序主入口函数
 ||| 创建服务器配置，并启动HTTP服务器
