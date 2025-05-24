@@ -2,6 +2,7 @@
 ||| 提供用于构建路由和处理HTTP请求的核心类型和函数
 module Ope.API.Core
 import public Ope.API.Operator
+import Data.SortedMap
 
 %default total
 
@@ -33,7 +34,7 @@ data API : Type where
   ||| 连接路径和终结点，形成完整 API
   ||| Show resp 约束确保响应类型可以被序列化
   ||| 例如: StaticPath "users" :> Get (List User)
-  (:>) : Show resp => Path -> Endpoint resp -> API
+  (:->) : Show resp => Path -> Endpoint resp -> API
 
 
 ||| EndpointResult 是类型函数，计算终结点的响应类型
@@ -42,13 +43,21 @@ public export
 EndpointResult : Endpoint resp -> Type
 EndpointResult (Get respType) = respType  -- GET 方法返回指定的响应类型
 
+public export
+Params : Type
+Params = SortedMap String String
+
+public export
+emptyParams : Params
+emptyParams = empty
+
 ||| HandlerType 计算处理特定 API 所需的处理器函数类型
 ||| 对于简单 API，处理器类型就是返回类型
 ||| 对于带参数的 API，处理器类型会包含参数类型
 ||| 例如: API "users/:id" 的 HandlerType 将是 (id -> User)
 public export
 HandlerType : API -> Type
-HandlerType (path :> endpoint) = IO (EndpointResult endpoint)
+HandlerType (path :-> endpoint) = Params -> IO (EndpointResult endpoint)
 -- 这个版本忽略了路径参数，完整版本应该是:
 -- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
 

@@ -17,22 +17,22 @@ import Ope.WAI
 ||| 用户API示例
 ||| 定义了获取用户数量的GET路由
 Api1 : API
-Api1 = StaticPath "users" :> Get Nat
+Api1 = StaticPath "users" :-> Get Nat
 
 ||| 文章列表API示例
 ||| 定义了获取文章列表的GET路由
 Api2 : API
-Api2 = StaticPath "posts" :> StaticPath "list" :> Get String
+Api2 = StaticPath "posts" :> StaticPath "list" :-> Get String
 
 ||| 用户API处理函数
 ||| 返回固定数值42作为示例
 handler1 : HandlerType Api1
-handler1 = pure 42
+handler1 params = pure 42
 
 ||| 文章列表API处理函数
 ||| 返回固定字符串"hello"作为示例
 handler2 : HandlerType Api2
-handler2 = pure "hello"
+handler2 params = pure "hello"
 
 ||| 用户API路由定义
 ||| 将API定义和处理函数关联起来

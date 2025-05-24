@@ -16,20 +16,22 @@ import Ope.WAI
 ||| @ segments 请求的路径段列表
 ||| @ path API路径定义
 public export
-matchPath : (segments : List String) -> (path : Path) -> Maybe (List (String, String))
-matchPath [] _ = Nothing
-matchPath [s] (StaticPath path) = 
-  if s == path then Just [] else Nothing
+matchPath : Maybe Params -> (segments : List String) -> (path : Path) -> Maybe Params
+matchPath Nothing [] _ = Nothing
+matchPath prevParams [s] (StaticPath path) = 
+    if s == path then Just nextParams else Nothing
+    where
+    nextParams : Params
+    nextParams = case prevParams of
+        Just params => params
+        Nothing => emptyParams
 
 -- 如果有多个路径段，只能匹配组合路径
-matchPath (s :: segments) (path :> rest) = 
-  case matchPath [s] path of
-    Just [] => matchPath segments rest
-    Just params@[param] => pure (::) <*> (Just param) <*> matchPath segments rest
-    -- 如果匹配到多个参数，则返回 Nothing，预期只有一个参数
-    Just _ => Nothing
+matchPath prevParams (s :: segments) (path :> rest) = 
+  case matchPath prevParams [s] path of
+    Just params => matchPath (Just params) segments rest
     Nothing => Nothing
-matchPath _ _ = Nothing
+matchPath _ _ _ = Nothing
 
 ||| API 匹配函数
 ||| 检查请求路径段是否匹配 API 定义
@@ -37,8 +39,8 @@ matchPath _ _ = Nothing
 ||| @ segments 请求的路径段列表
 ||| @ api API定义
 public export
-matchAPI : List String -> API -> Maybe (List (String, String))
-matchAPI segments (path :> _) = matchPath segments path
+matchAPI : List String -> API -> Maybe Params
+matchAPI segments (path :-> _) = matchPath Nothing segments path
 
 ||| 将 URL 路径字符串分割为路径段列表
 ||| 移除空路径段，便于路径匹配
@@ -53,11 +55,11 @@ segments path = filter (/= "") . forget . split (== '/') $ path
 ||| @ server 服务器实例，包含路由列表
 ||| @ req HTTP请求对象
 public export
-findMatchingRoute : Server -> Request -> Maybe (Route, List (String, String))
+findMatchingRoute : Server -> Request -> Maybe (Route, Params)
 findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
   where
     -- 内部辅助函数，递归遍历路由列表
-    findMatchingRoute' : List Route -> Maybe (Route, List (String, String))
+    findMatchingRoute' : List Route -> Maybe (Route, Params)
     findMatchingRoute' [] = Nothing
     findMatchingRoute' (route :: routes) = 
       case matchAPI (segments req.uri) route.api of
@@ -72,8 +74,8 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 ||| @ params 从URL中提取的参数
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
-                   (params : List (String, String)) -> IO Response
-executeHandler (path :> Get _) handler params = PlainTextResponse <$> handler
+                   (params : Params) -> IO Response
+executeHandler (path :-> Get _) handler params = PlainTextResponse <$> handler params
 
 
 ||| 处理 HTTP 请求
