@@ -29,6 +29,9 @@ record User where
 
 %runElab derive "User" [Show,Eq,ToJSON]
 
+map1 : Params
+map1 = insert "id" "1" emptyParams
+
 user1 : User
 user1 = MkUser "1" "John" 20
 

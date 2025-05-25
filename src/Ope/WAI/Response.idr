@@ -18,6 +18,10 @@ public export
 notFoundResponse : Response
 notFoundResponse = PlainTextResponse "Not Found"
 
+public export
+badRequestResponse : Response
+badRequestResponse = PlainTextResponse "Bad Request"
+
 ||| 响应渲染函数
 ||| 将 Response 转换为字符串，用于 HTTP 响应
 ||| @ resp 待渲染的响应对象

@@ -22,6 +22,7 @@ implementation FromString PathSegment where
 public export
 data Path : Type where
   Nil : Path
+  QueryAll : Type -> Path
   ||| 路径组合操作符，用于连接两个路径
   ||| 例如: StaticPath "api" :> StaticPath "users"
   (:>) : PathSegment -> Path -> Path  -- 组合路径
@@ -29,10 +30,12 @@ data Path : Type where
 ||| Endpoint 表示 API 终结点，包含 HTTP 方法和响应类型
 ||| 参数化类型 resp 用于携带响应类型信息
 public export
-data Endpoint : Type -> Type where
+data Endpoint : Type -> Type -> Type where
   ||| GET 请求终结点，resp 指定返回类型
   ||| 例如: Get String, Get User, Get (List Product)
-  Get : (resp : Type) -> Endpoint resp
+  Get : (resp : Type) -> Endpoint () resp
+
+  Post : (req : Type) -> (resp : Type) -> Endpoint req resp
   -- 可以扩展添加 Post, Put, Delete 等其他 HTTP 方法
 
 ||| API 类型将路径和终结点组合成完整的 API 描述
@@ -42,14 +45,15 @@ data API : Type where
   ||| 连接路径和终结点，形成完整 API
   ||| Show resp 约束确保响应类型可以被序列化
   ||| 例如: StaticPath "users" :> Get (List User)
-  (:->) : ToJSON resp => Show resp => Path -> Endpoint resp -> API
+  (:->) : FromJSON req => ToJSON resp => Show resp => Path -> Endpoint req resp -> API
 
 
 ||| EndpointResult 是类型函数，计算终结点的响应类型
 ||| 它从 Endpoint 类型中提取出响应类型信息
 public export
-EndpointResult : Endpoint resp -> Type
+EndpointResult : Endpoint req resp -> Type
 EndpointResult (Get resType) = resType -- GET 方法返回指定的响应类型
+EndpointResult (Post reqType resType) = reqType
 
 public export
 Params : Type
@@ -66,6 +70,7 @@ emptyParams = empty
 public export
 HandlerType : API -> Type
 HandlerType (path :-> (Get resType)) = Params -> IO resType
+HandlerType (path :-> (Post reqType resType)) = Params -> reqType -> IO resType
 -- 这个版本忽略了路径参数，完整版本应该是:
 -- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
 
