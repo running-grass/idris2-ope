@@ -1,13 +1,14 @@
 module Ope.WAI.Response
 
 import Ope.WAI.Core
+import JSON.ToJSON
 
 ||| 响应数据类型
 ||| 统一处理不同类型的响应
 public export
 data Response : Type where
   ||| JSON 响应，直接使用字符串表示 JSON
-  JSONResponse : String -> Response
+  JSONResponse : ToJSON a => a -> Response
   ||| 纯文本响应，要求值类型实现 Show 接口
   PlainTextResponse : Show a => a -> Response
 
@@ -22,6 +23,6 @@ notFoundResponse = PlainTextResponse "Not Found"
 ||| @ resp 待渲染的响应对象
 public export
 renderResponse : Response -> String
-renderResponse (JSONResponse jsonStr) = jsonStr
+renderResponse (JSONResponse a) = encode a
 renderResponse (PlainTextResponse value) = show value
 

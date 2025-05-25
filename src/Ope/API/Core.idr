@@ -3,26 +3,28 @@
 module Ope.API.Core
 import public Ope.API.Operator
 import Data.SortedMap
+import JSON.Derive
+%language ElabReflection
 
 %default total
+
+public export
+data PathSegment : Type where
+  StaticPath : String -> PathSegment
+  Capture : String -> Type -> PathSegment
+
+public export
+implementation FromString PathSegment where
+  fromString = StaticPath
 
 ||| Path 表示 API 路径的类型安全描述
 ||| 通过组合 Path 构造器，可以构建出完整的路由路径
 public export
 data Path : Type where
-  ||| 静态路径段，例如 "users", "products" 等
-  StaticPath : String -> Path
-
-  ||| 捕获路径段，例如 ":d"
-  Capture : String -> Path
-  
+  Nil : Path
   ||| 路径组合操作符，用于连接两个路径
   ||| 例如: StaticPath "api" :> StaticPath "users"
-  (:>) : Path -> Path -> Path  -- 组合路径
-
-public export
-implementation FromString Path where
-  fromString = StaticPath
+  (:>) : PathSegment -> Path -> Path  -- 组合路径
 
 ||| Endpoint 表示 API 终结点，包含 HTTP 方法和响应类型
 ||| 参数化类型 resp 用于携带响应类型信息
@@ -40,14 +42,14 @@ data API : Type where
   ||| 连接路径和终结点，形成完整 API
   ||| Show resp 约束确保响应类型可以被序列化
   ||| 例如: StaticPath "users" :> Get (List User)
-  (:->) : Show resp => Path -> Endpoint resp -> API
+  (:->) : ToJSON resp => Show resp => Path -> Endpoint resp -> API
 
 
 ||| EndpointResult 是类型函数，计算终结点的响应类型
 ||| 它从 Endpoint 类型中提取出响应类型信息
 public export
 EndpointResult : Endpoint resp -> Type
-EndpointResult (Get respType) = respType  -- GET 方法返回指定的响应类型
+EndpointResult (Get resType) = resType -- GET 方法返回指定的响应类型
 
 public export
 Params : Type
@@ -63,7 +65,7 @@ emptyParams = empty
 ||| 例如: API "users/:id" 的 HandlerType 将是 (id -> User)
 public export
 HandlerType : API -> Type
-HandlerType (path :-> endpoint) = Params -> IO (EndpointResult endpoint)
+HandlerType (path :-> (Get resType)) = Params -> IO resType
 -- 这个版本忽略了路径参数，完整版本应该是:
 -- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
 

@@ -13,7 +13,10 @@ authors = "running-grass"
 -- langversion
 
 -- packages to add to search path
-depends = streams-posix, async-epoll
+depends = 
+  streams-posix
+  , async-epoll
+  , json
 
 -- modules to install
 -- modules = API.Core

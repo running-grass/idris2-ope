@@ -9,6 +9,7 @@ import Data.SortedMap
 import public Ope.API.Core
 
 import Ope.WAI
+import JSON.ToJSON
 
 fillDefault: Lazy a -> Maybe a -> Maybe a
 fillDefault def Nothing = Just def
@@ -22,12 +23,12 @@ fillDefault _ (Just a) = Just a
 public export
 matchPath : Maybe Params -> (segments : List String) -> (path : Path) -> Maybe Params
 matchPath Nothing [] _ = Nothing
-matchPath prevParams [s] (StaticPath path) = 
+matchPath prevParams [s] (StaticPath path :> Nil) = 
     if s == path then (fillDefault emptyParams prevParams) else Nothing
-matchPath prevParams [s] (Capture key) = insert key s <$> fillDefault emptyParams prevParams
+matchPath prevParams [s] (Capture key ct :> Nil) = insert key s <$> fillDefault emptyParams prevParams
 -- 如果有多个路径段，只能匹配组合路径
 matchPath prevParams (s :: segments) (path :> rest) = 
-  case matchPath prevParams [s] path of
+  case matchPath prevParams [s] (path :> Nil) of
     Just params => matchPath (Just params) segments rest
     Nothing => Nothing
 matchPath _ _ _ = Nothing
@@ -74,7 +75,7 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
                    (params : Params) -> IO Response
-executeHandler (path :-> Get _) handler params = PlainTextResponse <$> handler params
+executeHandler (path :-> Get _) handler params = JSONResponse <$> handler params
 
 
 ||| 处理 HTTP 请求

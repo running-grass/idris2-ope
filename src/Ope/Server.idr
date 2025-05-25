@@ -117,29 +117,40 @@ request req =
   |> assemble
 
 
+getContentType : Response -> String
+getContentType (JSONResponse _) = "application/json"
+getContentType (PlainTextResponse _) = "text/plain"
+
 ||| 编码HTTP响应
 ||| 
 ||| 生成包含状态码和响应体的HTTP响应字节串
 ||| @ status HTTP状态码
 ||| @ body 响应体内容
 export
-encodeResponse' : (status : Nat) -> String -> ByteString
-encodeResponse' status body =
+encodeResponse' : (status : Nat) -> Response -> ByteString
+encodeResponse' status response =
   fromString $
     statusStr ++
     contentLengthStr ++
+    contentTypeStr ++
     "\r\n" ++
     body
   where
+    body : String
+    body = renderResponse response
+
+    contentTypeStr : String
+    contentTypeStr = "Content-Type: \{getContentType response}\r\n"
     statusStr : String
     statusStr = "HTTP/1.1 \{show status}\r\n"
     contentLengthStr : String
     contentLengthStr = "Content-Length: \{show (length body)}\r\n"
 
+
 ||| 生成400 Bad Request响应
 export
 badRequest : ByteString
-badRequest = encodeResponse' 400 ""
+badRequest = encodeResponse' 400 (PlainTextResponse "Bad Request")
 
 ||| 应用程序包装器
 ||| 
@@ -150,7 +161,7 @@ export
 applicationWraper : Application -> Request -> HTTPStream ByteString
 applicationWraper app req = do
   liftIO (app req) >>= \res =>
-    emit (encodeResponse' 200 (renderResponse res))
+    emit (encodeResponse' 200 res)
 
 
 ||| 处理HTTP请求

@@ -14,16 +14,34 @@ import public IO.Async.Loop.Epoll
 
 import Ope.WAI
 
+import Data.String
+
+import JSON.Derive
+
+%language ElabReflection
+
+
+record User where
+  constructor MkUser
+  id: String
+  name: String
+  age: Int
+
+%runElab derive "User" [Show,Eq,ToJSON]
+
+user1 : User
+user1 = MkUser "1" "John" 20
+
 Api1 : API
-Api1 = "users" :> Capture "id" :-> Get String
+Api1 = "users" :> Capture "id" String :> Nil :-> Get User
 
 handler1 : HandlerType Api1
 handler1 params = do
   let id = fromMaybe "" (lookup "id" params)
-  pure $ "Your id is " ++ id
+  pure $ user1
 
 Api2 : API
-Api2 = "users" :> Capture "id" :> "posts" :-> Get (List String)
+Api2 = "users" :> Capture "id" String :> "posts" :> Nil :-> Get (List String)
 handler2 : HandlerType Api2
 handler2 params = do
   let id = fromMaybe "" (lookup "id" params)
