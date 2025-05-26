@@ -1,12 +1,12 @@
 # Ope
 
-## 项目目标
-构建一个类型安全的RESTful API框架
+## Project Goal
+Build a type-safe RESTful API framework
 
-## 项目名称
-`Ope Ope no M` 是海贼王漫画里面的 `手术果实`，精准控制的能力，这也是这个项目的目标。
+## Project Name
+`Ope Ope no M` is the "Operation Fruit" from the One Piece manga, which grants precise control abilities. This is also the goal of this project.
 
-## 致谢
+## Acknowledgements
 
 - [Servant](https://www.servant.dev/)
 - [Stefan Höck](https://github.com/stefan-hoeck)

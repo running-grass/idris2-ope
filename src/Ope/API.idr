@@ -1,5 +1,5 @@
-||| API模块实现了路由匹配和请求处理的核心功能
-||| 提供了将HTTP请求与类型安全API定义匹配的机制
+||| The API module implements the core functionality of route matching and request handling
+||| Provides a mechanism to match HTTP requests with type-safe API definitions
 module Ope.API
 
 import Ope.Server.Type
@@ -23,18 +23,18 @@ fillDefault: Lazy a -> Maybe a -> Maybe a
 fillDefault def Nothing = Just def
 fillDefault _ (Just a) = Just a
 
-||| 将 URL 路径字符串分割为路径段列表
-||| 移除空路径段，便于路径匹配
-||| @ path 原始URL路径字符串
+||| Split a URL path string into a list of segments
+||| Remove empty segments for easier path matching
+||| @ path Original URL path string
 public export
 segments : String -> List String
 segments path = filter (/= "") . forget . split (== '/') $ path
 
-||| 查找匹配请求的路由
-||| 遍历服务器中的所有路由，找到第一个匹配的路由
-||| 返回匹配的路由和提取的路径参数
-||| @ server 服务器实例，包含路由列表
-||| @ req HTTP请求对象
+||| Find the matching route for a request
+||| Traverse all routes in the server and find the first matching one
+||| Returns the matching route and extracted path parameters
+||| @ server Server instance containing the route list
+||| @ req HTTP request object
 public export
 findMatchingRoute : Server -> Request -> Maybe (Route, Params)
 findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
@@ -70,12 +70,12 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
         Just params => Just (route, params)
         Nothing => findMatchingRoute' routes
 
-||| 执行处理器函数
-||| 根据 API 类型和提取的参数执行对应的处理器函数
-||| 将处理结果包装为响应对象
-||| @ api API定义
-||| @ handler 处理器函数
-||| @ params 从URL中提取的参数
+||| Execute the handler function
+||| Executes the corresponding handler function according to the API type and extracted parameters
+||| Wraps the result as a response object
+||| @ api API definition
+||| @ handler Handler function
+||| @ params Parameters extracted from the URL
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
                   (req : Request) -> (params : Params)  -> HTTPStream Response
@@ -94,11 +94,11 @@ executeHandler (path :-> (Post reqType resType)) handler req params =  bind hand
           res <- liftIO $ handler params req'
           emit $ JSONResponse res
 
-||| 处理 HTTP 请求
-||| 查找匹配的路由，执行处理器函数，生成响应
-||| 如果没有匹配的路由，返回 404 响应
-||| @ server 服务器实例
-||| @ req HTTP请求对象
+||| Handle HTTP request
+||| Find the matching route, execute the handler function, and generate a response
+||| If no matching route is found, return a 404 response
+||| @ server Server instance
+||| @ req HTTP request object
 public export
 processRequest : Server -> Request -> HTTPStream Response
 processRequest server req = 

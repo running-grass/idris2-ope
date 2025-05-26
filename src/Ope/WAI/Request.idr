@@ -1,3 +1,5 @@
+||| The Request module implements the core functionality of the Web Application Interface
+||| Provides a mechanism to handle different request types
 module Ope.WAI.Request
 
 import Ope.WAI.Core
@@ -7,18 +9,18 @@ import Derive.Prelude
 
 %language ElabReflection
 
-||| HTTP方法枚举
-||| 定义了支持的HTTP请求方法
+||| HTTP method enum
+||| Defines supported HTTP request methods
 public export
 data Method = GET | POST | HEAD
 
 %runElab derive "Method" [Show,Eq,Ord]
 
 
-||| 解析HTTP方法字符串
+||| Parse HTTP method string
 ||| 
-||| 将字符串转换为Method枚举值
-||| @ s 方法字符串("GET", "POST"等)
+||| Converts a string to a Method enum value
+||| @ s Method string (e.g. "GET", "POST", etc.)
 public export
 method : String -> Either HTTPErr Method
 method "GET"  = Right GET
@@ -27,25 +29,25 @@ method "HEAD" = Right HEAD
 method _      = Left InvalidRequest
 
 
-||| HTTP请求记录类型
-||| 包含HTTP请求的所有相关信息
+||| HTTP request record type
+||| Contains all relevant information for an HTTP request
 public export
 record Request where
   constructor MkRequest
-  ||| HTTP请求方法(GET, POST等)
+  ||| HTTP request method (GET, POST, etc.)
   method  : Method
-  ||| 请求的URI路径
+  ||| Request URI path
   uri     : String
-  ||| 查询参数映射
+  ||| Query parameter map
   queryParams : SortedMap String String
-  ||| HTTP版本
+  ||| HTTP version
   version : Version
-  ||| 请求头部字段映射
+  ||| HTTP header fields map
   headers : Headers
-  ||| 请求体长度
+  ||| Request body length
   length  : Nat
-  ||| 请求体内容类型
+  ||| Request body content type
   type    : Maybe String
-  ||| 请求体字节流
+  ||| Request body byte stream
   body    : HTTPStream ByteString
 

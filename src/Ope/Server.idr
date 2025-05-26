@@ -1,5 +1,5 @@
-||| Server模块提供HTTP服务器的核心功能
-||| 实现了一个基于异步IO的HTTP服务器框架
+||| The Server module provides the core functionality of the HTTP server
+||| Implements an asynchronous IO-based HTTP server framework
 module Ope.Server
 
 import public Data.SortedMap
@@ -23,16 +23,16 @@ import Ope.WAI.Response
 
 %default total
 
-||| Prog类型是服务器异步流程序的核心类型
-||| 基于Poll事件循环和AsyncStream实现异步IO
+||| Prog type is the core type for the server's asynchronous stream program
+||| Based on Poll event loop and AsyncStream for asynchronous IO
 public export
 0 Prog : List Type -> Type -> Type
 Prog = AsyncStream Poll
 
-||| 运行HTTP服务器
+||| Run the HTTP server
 ||| 
-||| 接收一个异步程序并在epoll事件循环中执行它
-||| @ prog 要执行的服务器程序
+||| Accepts an asynchronous program and executes it in the epoll event loop
+||| @ prog The server program to execute
 export covering
 runServer : Prog [Errno] Void -> IO ()
 runServer prog = epollApp $ mpull (handle [stderrLn . interpolate] prog)
@@ -48,10 +48,10 @@ SPACE, COLON : Bits8
 SPACE = 32
 COLON = 58
 
-||| 解析HTTP请求的起始行
+||| Parse the start line of an HTTP request
 ||| 
-||| 提取HTTP方法、目标路径和HTTP版本
-||| @ bs 包含起始行的字节串
+||| Extracts HTTP method, target path, and HTTP version
+||| @ bs ByteString containing the start line
 startLine : ByteString -> Either HTTPErr (Method,String,Version)
 startLine bs =
   case toString <$> split SPACE (trim bs) of
@@ -59,11 +59,11 @@ startLine bs =
     _       => Left InvalidRequest
 
 
-||| 解析HTTP请求的头部字段
+||| Parse HTTP request headers
 ||| 
-||| 递归处理头部列表，构建头部映射
-||| @ hs 当前已解析的头部映射
-||| @ t 待解析的头部字节串列表
+||| Recursively processes the header list and builds the header map
+||| @ hs Currently parsed header map
+||| @ t List of ByteStrings to parse
 headers : Headers -> List ByteString -> Either HTTPErr Headers
 headers hs []     = Right hs
 headers hs (h::t) =
@@ -75,21 +75,21 @@ headers hs (h::t) =
     _                => Left InvalidRequest
 
 
-||| 从HTTP头部获取内容长度
-||| @ hs HTTP头部映射
+||| Get content length from HTTP headers
+||| @ hs HTTP header map
 contentLength : Headers -> Nat
 contentLength = maybe 0 cast . lookup "content-length"
 
-||| 从HTTP头部获取内容类型
-||| @ hs HTTP头部映射
+||| Get content type from HTTP headers
+||| @ hs HTTP header map
 contentType : Headers -> Maybe String
 contentType = lookup "content-type"
 
 
-||| 组装HTTP请求对象
+||| Assemble HTTP request object
 ||| 
-||| 将解析好的HTTP组件组装成完整的Request对象
-||| @ p 包含HTTP字节流的异步拉取流
+||| Assembles parsed HTTP components into a complete Request object
+||| @ p Asynchronous pull stream of HTTP ByteStrings
 export
 assemble :
      HTTPPull (List ByteString) (HTTPStream ByteString)
@@ -105,9 +105,9 @@ assemble p = Prelude.do
   pure $ Just (MkRequest met uri queryParams vrs hs cl ct $ C.take cl body)
 
 
-||| 从HTTP字节流解析HTTP请求
+||| Parse HTTP request from HTTP byte stream
 ||| 
-||| @ req HTTP字节流
+||| @ req HTTP byte stream
 export
 request : HTTPStream ByteString -> HTTPPull o (Maybe Request)
 request req =
@@ -121,11 +121,11 @@ getContentType : Response -> String
 getContentType (JSONResponse _) = "application/json"
 getContentType (PlainTextResponse _) = "text/plain"
 
-||| 编码HTTP响应
+||| Encode HTTP response
 ||| 
-||| 生成包含状态码和响应体的HTTP响应字节串
-||| @ status HTTP状态码
-||| @ body 响应体内容
+||| Generates an HTTP response ByteString with status code and body
+||| @ status HTTP status code
+||| @ body Response body content
 export
 encodeResponse' : (status : Nat) -> Response -> ByteString
 encodeResponse' status response =
@@ -147,16 +147,16 @@ encodeResponse' status response =
     contentLengthStr = "Content-Length: \{show (length body)}\r\n"
 
 
-||| 生成400 Bad Request响应
+||| Generate 400 Bad Request response
 export
 badRequest : ByteString
 badRequest = encodeResponse' 400 (PlainTextResponse "Bad Request")
 
-||| 处理单个客户端连接
+||| Handle a single client connection
 ||| 
-||| 读取客户端请求并返回响应，完成后关闭连接
-||| @ app 应用程序处理函数
-||| @ cli 客户端socket
+||| Reads client request and returns response, then closes the connection
+||| @ app Application handler function
+||| @ cli Client socket
 covering
 serve : (Request -> HTTPStream Response) -> Socket AF_INET -> Async Poll [] ()
 serve app cli =
@@ -177,20 +177,20 @@ serve app cli =
         Right () => pure ()
 
 
-||| 服务器配置记录类型
+||| Server configuration record type
 ||| 
-||| 包含服务器绑定地址和最大连接数
+||| Contains server bind address and max connection count
 public export
 record ServerConfig where
   constructor MkServerConfig
-  ||| 服务器绑定的IP地址和端口
+  ||| Server bind IP address and port
   bind : IP4Addr
-  ||| 服务器允许的最大连接数
+  ||| Max allowed connections
   maxConns : Nat
 
-||| 默认服务器配置
+||| Default server configuration
 ||| 
-||| 绑定127.0.0.1:2222，最大连接数128
+||| Binds to 127.0.0.1:2222, max connections 128
 public export
 defaultConfig : ServerConfig
 defaultConfig = MkServerConfig  {
@@ -198,11 +198,11 @@ defaultConfig = MkServerConfig  {
     maxConns = 128
   }
 
-||| 创建并启动HTTP服务器
+||| Create and start HTTP server
 ||| 
-||| 根据提供的配置和应用程序创建HTTP服务器
-||| @ config 服务器配置
-||| @ app 应用程序处理函数
+||| Creates HTTP server according to the provided config and application
+||| @ config Server configuration
+||| @ app Application handler function
 covering
 public export
 server : ServerConfig -> (Request -> HTTPStream Response) -> Prog [Errno] Void

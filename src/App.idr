@@ -1,5 +1,5 @@
-||| App模块提供了应用程序示例
-||| 定义了示例API路由和处理函数
+||| The App module provides application examples
+||| Defines example API routes and handler functions
 module App
 
 import Ope.Server.Type
@@ -52,8 +52,8 @@ handler2 params req = do
   let user = { id := uid } req
   pure [user]
 
-||| 服务器实例
-||| 包含所有可用的API路由
+||| Server instance
+||| Contains all available API routes
 public export
 server : Server
 server = MkServer [

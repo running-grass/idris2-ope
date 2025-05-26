@@ -1,5 +1,5 @@
-||| API.Core模块定义了类型安全的API表示系统
-||| 提供用于构建路由和处理HTTP请求的核心类型和函数
+||| The API.Core module defines a type-safe API representation system
+||| Provides core types and functions for building routes and handling HTTP requests
 module Ope.API.Core
 import public Ope.API.Operator
 import Data.SortedMap
@@ -17,42 +17,42 @@ public export
 implementation FromString PathSegment where
   fromString = StaticPath
 
-||| Path 表示 API 路径的类型安全描述
-||| 通过组合 Path 构造器，可以构建出完整的路由路径
+||| Path represents a type-safe description of an API path
+||| By combining Path constructors, you can build a complete route path
 public export
 data Path : Type where
   Nil : Path
   QueryAll : Type -> Path
-  ||| 路径组合操作符，用于连接两个路径
-  ||| 例如: StaticPath "api" :> StaticPath "users"
-  (:>) : PathSegment -> Path -> Path  -- 组合路径
+  ||| Path composition operator, used to connect two paths
+  ||| For example: StaticPath "api" :> StaticPath "users"
+  (:>) : PathSegment -> Path -> Path  -- Path composition
 
-||| Endpoint 表示 API 终结点，包含 HTTP 方法和响应类型
-||| 参数化类型 resp 用于携带响应类型信息
+||| Endpoint represents an API endpoint, including HTTP method and response type
+||| The resp parameter type carries response type information
 public export
 data Endpoint : Type -> Type -> Type where
-  ||| GET 请求终结点，resp 指定返回类型
-  ||| 例如: Get String, Get User, Get (List Product)
+  ||| GET request endpoint, resp specifies the return type
+  ||| For example: Get String, Get User, Get (List Product)
   Get : (resp : Type) -> Endpoint () resp
 
   Post : (req : Type) -> (resp : Type) -> Endpoint req resp
-  -- 可以扩展添加 Post, Put, Delete 等其他 HTTP 方法
+  -- Can be extended to add Post, Put, Delete and other HTTP methods
 
-||| API 类型将路径和终结点组合成完整的 API 描述
-||| 它是类型安全 API 框架的核心
+||| API type combines path and endpoint into a complete API description
+||| It is the core of the type-safe API framework
 public export
 data API : Type where
-  ||| 连接路径和终结点，形成完整 API
-  ||| Show resp 约束确保响应类型可以被序列化
-  ||| 例如: StaticPath "users" :> Get (List User)
+  ||| Connects path and endpoint to form a complete API
+  ||| Show resp constraint ensures the response type can be serialized
+  ||| For example: StaticPath "users" :> Get (List User)
   (:->) : FromJSON req => ToJSON resp => Show resp => Path -> Endpoint req resp -> API
 
 
-||| EndpointResult 是类型函数，计算终结点的响应类型
-||| 它从 Endpoint 类型中提取出响应类型信息
+||| EndpointResult is a type function that computes the response type of an endpoint
+||| It extracts the response type information from the Endpoint type
 public export
 EndpointResult : Endpoint req resp -> Type
-EndpointResult (Get resType) = resType -- GET 方法返回指定的响应类型
+EndpointResult (Get resType) = resType -- GET method returns the specified response type
 EndpointResult (Post reqType resType) = reqType
 
 public export
@@ -63,31 +63,31 @@ public export
 emptyParams : Params
 emptyParams = empty
 
-||| HandlerType 计算处理特定 API 所需的处理器函数类型
-||| 对于简单 API，处理器类型就是返回类型
-||| 对于带参数的 API，处理器类型会包含参数类型
-||| 例如: API "users/:id" 的 HandlerType 将是 (id -> User)
+||| HandlerType computes the handler function type required for a specific API
+||| For simple APIs, the handler type is just the return type
+||| For APIs with parameters, the handler type will include parameter types
+||| For example: HandlerType for API "users/:id" will be (id -> User)
 public export
 HandlerType : API -> Type
 HandlerType (path :-> (Get resType)) = Params -> IO resType
 HandlerType (path :-> (Post reqType resType)) = Params -> reqType -> IO resType
--- 这个版本忽略了路径参数，完整版本应该是:
+-- This version ignores path parameters, the complete version should be:
 -- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
 
 
-||| 路由记录类型
-||| 将 API 定义与对应的处理器函数关联起来
+||| Route record type
+||| Associates an API definition with its handler function
 public export
 record Route where
   constructor (:=>)
-  ||| API 定义，描述路径和端点
+  ||| API definition, describes path and endpoint
   api: API
-  ||| 处理器函数，类型由 API 定义决定
+  ||| Handler function, type is determined by the API definition
   handler : HandlerType api
 
-||| 服务器数据类型
-||| 包含一组路由定义，用于处理 HTTP 请求
+||| Server data type
+||| Contains a set of route definitions for handling HTTP requests
 public export
 data Server : Type where
-  ||| 创建服务器实例，包含路由列表
+  ||| Creates a server instance containing a list of routes
   MkServer : (routes : List Route) -> Server

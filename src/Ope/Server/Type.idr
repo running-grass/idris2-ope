@@ -1,5 +1,5 @@
-||| Server.Type模块定义了HTTP服务器的核心类型
-||| 包括请求、响应和处理函数的类型定义
+||| The Server.Type module defines the core types of the HTTP server
+||| Including definitions for request, response, and handler function types
 module Ope.Server.Type
 
 import FS.Posix

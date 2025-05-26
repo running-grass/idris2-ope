@@ -1,19 +1,21 @@
+||| The Response module implements the core functionality of the Web Application Interface
+||| Provides a mechanism to handle different response types
 module Ope.WAI.Response
 
 import Ope.WAI.Core
 import JSON.ToJSON
 
-||| 响应数据类型
-||| 统一处理不同类型的响应
+||| Response data type
+||| Unified handling of different response types
 public export
 data Response : Type where
-  ||| JSON 响应，直接使用字符串表示 JSON
+  ||| JSON response, directly uses a string to represent JSON
   JSONResponse : ToJSON a => a -> Response
-  ||| 纯文本响应，要求值类型实现 Show 接口
+  ||| Plain text response, requires value type to implement Show interface
   PlainTextResponse : Show a => a -> Response
 
-||| 404 未找到响应
-||| 当请求的路径无法匹配到任何路由时返回
+||| 404 Not Found response
+||| Returned when the requested path cannot be matched to any route
 public export
 notFoundResponse : Response
 notFoundResponse = PlainTextResponse "Not Found"
@@ -22,9 +24,9 @@ public export
 badRequestResponse : Response
 badRequestResponse = PlainTextResponse "Bad Request"
 
-||| 响应渲染函数
-||| 将 Response 转换为字符串，用于 HTTP 响应
-||| @ resp 待渲染的响应对象
+||| Response rendering function
+||| Converts a Response to a string for HTTP response
+||| @ resp The response object to render
 public export
 renderResponse : Response -> String
 renderResponse (JSONResponse a) = encode a
