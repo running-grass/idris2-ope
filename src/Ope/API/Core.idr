@@ -34,8 +34,8 @@ data Query : Type where
   ||| Query params record, e.g. "?all"
   QueryAll : Type -> Query
   ||| Query params composition operator, used to connect two paths
-  ||| For example: "api" :> "users" :> QueryAll User
-  (:>) : PathSegment -> Query -> Query  -- Query composition
+  ||| For example: "api" :/ "users" :/ QueryAll User
+  (:/) : PathSegment -> Query -> Query  -- Query composition
 
 ||| Endpoint represents an API endpoint, including HTTP method and response type
 ||| The resp parameter type carries response type information
@@ -99,7 +99,7 @@ public export
 data API : Type where
   ||| Connects path and endpoint to form a complete API
   ||| Show resp constraint ensures the response type can be serialized
-  ||| For example: StaticPath "users" :> Get (List User)
+  ||| For example: StaticPath "users" :/ Get (List User)
   (:->) : FromJSON req => ToJSON resp => Show resp => Query -> Endpoint req resp -> API
 
 

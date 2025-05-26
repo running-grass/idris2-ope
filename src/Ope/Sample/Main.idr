@@ -36,7 +36,7 @@ user1 = MkUser "1" "John" 20
 
 ||| Example GET API: get user by id.
 Api1 : API
-Api1 = "users" :> Capture "id" String :> Nil :-> Get User
+Api1 = "users" :/ Capture "id" String :/ Nil :-> Get User
 
 ||| Example GET API handler, returns a fixed user.
 handler1 : HandlerType Api1
@@ -46,7 +46,7 @@ handler1 params = do
 
 ||| Example POST API: create a user by id and return a user list.
 Api2 : API
-Api2 = "users" :> Capture "id" String :> Nil :-> Post User (List User)
+Api2 = "users" :/ Capture "id" String :/ Nil :-> Post User (List User)
 
 ||| Example POST API handler, returns a list containing the new user.
 handler2 : HandlerType Api2

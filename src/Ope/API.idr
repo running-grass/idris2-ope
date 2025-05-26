@@ -47,11 +47,11 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 
     matchPath : Maybe Params -> List String -> Query -> Maybe Params
     matchPath Nothing [] _ = Nothing
-    matchPath prevParams [s] (StaticPath path :> Nil) = 
+    matchPath prevParams [s] (StaticPath path :/ Nil) = 
         if s == path then (fillDefault emptyParams prevParams) else Nothing
-    matchPath prevParams [s] (Capture key ct :> Nil) = insert key s <$> fillDefault emptyParams prevParams
-    matchPath prevParams (s :: segments) (path :> rest) = 
-      case matchPath prevParams [s] (path :> Nil) of
+    matchPath prevParams [s] (Capture key ct :/ Nil) = insert key s <$> fillDefault emptyParams prevParams
+    matchPath prevParams (s :: segments) (path :/ rest) = 
+      case matchPath prevParams [s] (path :/ Nil) of
         Just params => matchPath (Just params) segments rest
         Nothing => Nothing
     matchPath _ _ _ = Nothing
