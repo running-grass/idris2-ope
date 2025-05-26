@@ -3,6 +3,7 @@ module Ope.Sample.Main
 
 import Ope.Server
 import Ope.API
+import Ope.API.Core
 
 import Data.SortedMap
 
@@ -36,7 +37,7 @@ user1 = MkUser "1" "John" 20
 
 ||| Example GET API: get user by id.
 Api1 : API
-Api1 = "users" :/ Capture "id" String :/ Nil :-> Get User
+Api1 = "users" :/ Nil :-> Get User
 
 ||| Example GET API handler, returns a fixed user.
 handler1 : HandlerType Api1

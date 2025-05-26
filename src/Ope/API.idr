@@ -33,42 +33,51 @@ public export
 segments : String -> List String
 segments path = filter (/= "") . forget . split (== '/') $ path
 
+
+
+matchPath : List String -> Query -> Bool
+matchPath [] _ = False
+matchPath [s] (StaticPath path :/ _) = 
+        if s == path then True else False
+matchPath [s] (Capture key ct :/ _) = True
+matchPath (s :: segments) (path :/ rest) = 
+    case matchPath' s path of
+      True => matchPath segments rest
+      False => False
+
+      where 
+        matchPath' : String -> PathSegment -> Bool
+        matchPath' s (StaticPath path) = 
+          if s == path then True else False
+        matchPath' s (Capture key ct) = True
+matchPath _ _ = False
+
+
 ||| Find the matching route for a request
 ||| Traverse all routes in the server and find the first matching one
 ||| Returns the matching route and extracted path parameters
 ||| @ server Server instance containing the route list
 ||| @ req HTTP request object
 public export
-findMatchingRoute : Server -> Request -> Maybe (Route, Params)
+findMatchingRoute : Server -> Request -> Maybe Route
 findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
   where
     method : Method
     method = req.method
 
-    matchPath : Maybe Params -> List String -> Query -> Maybe Params
-    matchPath Nothing [] _ = Nothing
-    matchPath prevParams [s] (StaticPath path :/ Nil) = 
-        if s == path then (fillDefault emptyParams prevParams) else Nothing
-    matchPath prevParams [s] (Capture key ct :/ Nil) = insert key s <$> fillDefault emptyParams prevParams
-    matchPath prevParams (s :: segments) (path :/ rest) = 
-      case matchPath prevParams [s] (path :/ Nil) of
-        Just params => matchPath (Just params) segments rest
-        Nothing => Nothing
-    matchPath _ _ _ = Nothing
-
     -- 合并后的路径匹配和参数提取逻辑
-    matchAPIPath : List String -> API -> Maybe Params
+    matchAPIPath : List String -> API -> Bool
     matchAPIPath segments (path :-> endpoint) = case method == endpointToMethod endpoint of
-      True => matchPath Nothing segments path
-      False => Nothing
+      True => matchPath segments path
+      False => False
 
     -- 内部辅助函数，递归遍历路由列表
-    findMatchingRoute' : List Route -> Maybe (Route, Params)
+    findMatchingRoute' : List Route -> Maybe (Route)
     findMatchingRoute' [] = Nothing
     findMatchingRoute' (route :: routes) = 
       case matchAPIPath (segments req.uri) route.api of
-        Just params => Just (route, params)
-        Nothing => findMatchingRoute' routes
+        True => Just route
+        False => findMatchingRoute' routes
 
 
 private
@@ -129,5 +138,5 @@ public export
 processRequest : Server -> HTTPApplication
 processRequest server req = 
   case findMatchingRoute server req of
-    Just (route, params) => executeHandler route.api route.handler req params
+    Just route => executeHandler route.api route.handler req emptyParams
     Nothing => emit notFoundResponse

@@ -10,6 +10,7 @@ import Ope.WAI.Request
 
 %default total
 
+
 ||| PathSegment represents a segment of an API path
 ||| It can be a static path segment or a captured path segment
 public export
@@ -17,13 +18,19 @@ data PathSegment : Type where
   ||| Static path segment, e.g. "users"
   StaticPath : String -> PathSegment
   ||| Captured path segment, e.g. ":id"
-  Capture : String -> Type -> PathSegment
+  Capture : String -> (a : Type) -> PathSegment
 
 ||| PathSegment implements the FromString interface
 ||| It allows converting a string to a PathSegment
 public export
-implementation FromString PathSegment where
+implementation FromString (PathSegment) where
   fromString = StaticPath
+
+||| Params is a type for query parameters
+||| It is a map of parameter names to their values
+public export
+Params : Type
+Params = SortedMap String String
 
 ||| Query represents a type-safe description of an API path
 ||| By combining Query constructors, you can build a complete route path
@@ -32,10 +39,10 @@ data Query : Type where
   ||| Empty query params, e.g. ""
   Nil : Query
   ||| Query params record, e.g. "?all"
-  QueryAll : Type -> Query
+  -- QueryAll : Params -> Query [] Params
   ||| Query params composition operator, used to connect two paths
   ||| For example: "api" :/ "users" :/ QueryAll User
-  (:/) : PathSegment -> Query -> Query  -- Query composition
+  (:/) : PathSegment -> Query -> Query -- Query composition
 
 ||| Endpoint represents an API endpoint, including HTTP method and response type
 ||| The resp parameter type carries response type information
@@ -93,6 +100,41 @@ endpointToMethod (Put reqType resType) = PUT
 endpointToMethod (Delete reqType resType) = DELETE
 endpointToMethod (Patch reqType resType) = PATCH
 
+
+public export
+interface PathParams a where
+  parsePathParams : String -> Maybe a
+
+public export
+implementation PathParams () where
+  parsePathParams _ = Nothing
+
+public export
+implementation PathParams String where
+  parsePathParams s = Just s
+
+public export
+implementation PathParams Nat where
+  parsePathParams = parsePositive
+
+public export
+implementation PathParams Int where
+  parsePathParams = parseInteger
+
+public export
+implementation PathParams Integer where
+  parsePathParams = parseInteger
+
+public export
+implementation PathParams Double where
+  parsePathParams = parseDouble
+
+public export
+implementation PathParams Bool where
+  parsePathParams "0" = Just False
+  parsePathParams "1" = Just True
+  parsePathParams _ = Nothing
+
 ||| API type combines path and endpoint into a complete API description
 ||| It is the core of the type-safe API framework
 public export
@@ -100,9 +142,8 @@ data API : Type where
   ||| Connects path and endpoint to form a complete API
   ||| Show resp constraint ensures the response type can be serialized
   ||| For example: StaticPath "users" :/ Get (List User)
-  (:->) : FromJSON req => ToJSON resp => Show resp => Query -> Endpoint req resp -> API
-
-
+  (:->) : (FromJSON req, ToJSON resp, Show resp) 
+       => (Query) -> Endpoint req resp -> API
 
 ||| EndpointResult is a type function that computes the response type of an endpoint
 ||| It extracts the response type information from the Endpoint type
@@ -118,12 +159,6 @@ EndpointResult (Post reqType resType) = resType
 EndpointResult (Put reqType resType) = resType
 EndpointResult (Delete reqType resType) = resType
 EndpointResult (Patch reqType resType) = resType
-
-||| Params is a type for query parameters
-||| It is a map of parameter names to their values
-public export
-Params : Type
-Params = SortedMap String String
 
 ||| emptyParams is a function that returns an empty Params map
 ||| It is used as a default value for query parameters
