@@ -107,7 +107,7 @@ interface PathParams a where
 
 public export
 implementation PathParams () where
-  parsePathParams _ = Nothing
+  parsePathParams _ = Just ()
 
 public export
 implementation PathParams String where
