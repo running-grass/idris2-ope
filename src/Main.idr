@@ -11,7 +11,7 @@ import Ope.API
 ||| 处理所有HTTP请求，将请求路由到对应的处理函数
 ||| @ req HTTP请求对象
 public export
-app : Application
+app : Request -> HTTPStream Response
 app req = processRequest server req
 
 ||| 程序主入口函数

@@ -152,51 +152,29 @@ export
 badRequest : ByteString
 badRequest = encodeResponse' 400 (PlainTextResponse "Bad Request")
 
-||| 应用程序包装器
-||| 
-||| 将应用程序的响应转换为HTTP字节流
-||| @ app 应用程序处理函数
-||| @ req HTTP请求对象
-export
-applicationWraper : Application -> Request -> HTTPStream ByteString
-applicationWraper app req = do
-  liftIO (app req) >>= \res =>
-    emit (encodeResponse' 200 res)
-
-
-||| 处理HTTP请求
-||| 
-||| 从客户端读取请求，调用应用处理函数，并将响应写回客户端
-||| @ cli 客户端socket
-||| @ app 应用程序处理函数
-||| @ p HTTP请求解析器
-handleRequest :
-     Socket AF_INET
-  -> Application
-  -> HTTPPull ByteString (Maybe Request)
-  -> AsyncStream Poll [Errno] Void
-handleRequest cli app p =
-  extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
-    Left _   => emit badRequest |> writeTo cli
-    Right () => pure ()
-  where
-  response : Maybe Request -> HTTPStream ByteString
-  response Nothing  = pure ()
-  response (Just r) = applicationWraper app r
-
 ||| 处理单个客户端连接
 ||| 
 ||| 读取客户端请求并返回响应，完成后关闭连接
 ||| @ app 应用程序处理函数
 ||| @ cli 客户端socket
 covering
-serve : Application -> Socket AF_INET -> Async Poll [] ()
+serve : (Request -> HTTPStream Response) -> Socket AF_INET -> Async Poll [] ()
 serve app cli =
   flip guarantee (close' cli) $
     mpull $ handleErrors (\(Here x) => stderrLn "\{x}") $
          bytes cli 0xfff
       |> request
-      |> handleRequest cli app
+      |> handleRequest'
+  where
+    response : Maybe Request -> HTTPStream ByteString
+    response Nothing  = pure ()
+    response (Just r) =  app r |> mapOutput (encodeResponse' 200)
+
+    handleRequest' : HTTPPull ByteString (Maybe Request) -> AsyncStream Poll [Errno] Void
+    handleRequest' p =
+      extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
+        Left _   => emit badRequest |> writeTo cli
+        Right () => pure ()
 
 
 ||| 服务器配置记录类型
@@ -227,7 +205,7 @@ defaultConfig = MkServerConfig  {
 ||| @ app 应用程序处理函数
 covering
 public export
-server : ServerConfig -> Application -> Prog [Errno] Void
+server : ServerConfig -> (Request -> HTTPStream Response) -> Prog [Errno] Void
 server config app =
   let conn = acceptOn AF_INET SOCK_STREAM config.bind
       serve' = serve app

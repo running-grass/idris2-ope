@@ -27,7 +27,7 @@ record User where
   name: String
   age: Int
 
-%runElab derive "User" [Show,Eq,ToJSON]
+%runElab derive "User" [Show,Eq,ToJSON, FromJSON]
 
 map1 : Params
 map1 = insert "id" "1" emptyParams
@@ -44,13 +44,13 @@ handler1 params = do
   pure $ user1
 
 Api2 : API
-Api2 = "users" :> Capture "id" String :> "posts" :> Nil :-> Get (List String)
-handler2 : HandlerType Api2
-handler2 params = do
-  let id = fromMaybe "" (lookup "id" params)
-  let posts = ["post1", "post2", "post3"]
+Api2 = "users" :> Capture "id" String :> Nil :-> Post User (List User)
 
-  pure $ (id ++ "--" ++ ) <$> posts
+handler2 : HandlerType Api2
+handler2 params req = do
+  let uid = fromMaybe "" (lookup "id" params)
+  let user = { id := uid } req
+  pure [user]
 
 ||| 服务器实例
 ||| 包含所有可用的API路由

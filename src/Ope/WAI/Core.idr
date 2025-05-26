@@ -48,6 +48,7 @@ HTTPPull o r = AsyncPull Poll o [Errno,HTTPErr] r
 public export
 0 HTTPStream : Type -> Type
 HTTPStream o = AsyncPull Poll o [Errno,HTTPErr] ()
+
 ||| HTTP头部类型
 ||| 表示为键值对映射，键和值都是字符串
 public export

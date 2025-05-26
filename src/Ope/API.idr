@@ -8,7 +8,14 @@ import Data.List1
 import Data.SortedMap
 import public Ope.API.Core
 
-import Ope.WAI
+import FS.Posix
+import FS.Socket
+
+import IO.Async.Loop.Posix
+import IO.Async.Loop.Epoll
+import FS.Concurrent
+
+import public Ope.WAI
 import JSON.ToJSON
 import JSON.FromJSON
 
@@ -71,17 +78,21 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 ||| @ params 从URL中提取的参数
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
-                   (params : Params) -> IO Response
-executeHandler (path :-> Get _) handler params = JSONResponse <$> handler params
-executeHandler (path :-> (Post reqType resType)) handler params = 
-
-  case req of
-    Left err => pure badRequestResponse
-    Right req' => JSONResponse <$> handler params req'
+                  (req : Request) -> (params : Params)  -> HTTPStream Response
+executeHandler (path :-> Get _) handler req params = do
+  res <- liftIO $ handler params
+  emit $ JSONResponse res
+executeHandler (path :-> (Post reqType resType)) handler req params =  bind hand req.body
   where
-    req : Either DecodingErr reqType
-    req = decode $ encode params
-
+    hand : ByteString -> HTTPStream Response
+    hand bs = do
+      let reqBody = toString bs
+      let req : Either DecodingErr reqType = decode reqBody
+      case req of
+        Left err => emit badRequestResponse
+        Right req' => do
+          res <- liftIO $ handler params req'
+          emit $ JSONResponse res
 
 ||| 处理 HTTP 请求
 ||| 查找匹配的路由，执行处理器函数，生成响应
@@ -89,8 +100,8 @@ executeHandler (path :-> (Post reqType resType)) handler params =
 ||| @ server 服务器实例
 ||| @ req HTTP请求对象
 public export
-processRequest : Server -> Request -> IO Response
+processRequest : Server -> Request -> HTTPStream Response
 processRequest server req = 
   case findMatchingRoute server req of
-    Just (route, params) => executeHandler route.api route.handler params
-    Nothing => pure notFoundResponse
+    Just (route, params) => executeHandler route.api route.handler req params
+    Nothing => emit notFoundResponse
