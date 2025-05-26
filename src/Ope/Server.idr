@@ -1,5 +1,4 @@
-||| The Server module provides the core functionality of the HTTP server
-||| Implements an asynchronous IO-based HTTP server framework
+||| Define the core functionality of the HTTP server
 module Ope.Server
 
 import public Data.SortedMap
@@ -15,11 +14,10 @@ import public System
 
 import Derive.Prelude
 
-import Ope.Server.Type
-
 import Ope.WAI.Core
 import Ope.WAI.Request
 import Ope.WAI.Response
+import Ope.API
 
 %default total
 
@@ -33,16 +31,19 @@ Prog = AsyncStream Poll
 ||| 
 ||| Accepts an asynchronous program and executes it in the epoll event loop
 ||| @ prog The server program to execute
-export covering
-runServer : Prog [Errno] Void -> IO ()
-runServer prog = epollApp $ mpull (handle [stderrLn . interpolate] prog)
+covering
+runServer' : Prog [Errno] Void -> IO ()
+runServer' prog = epollApp $ mpull (handle [stderrLn . interpolate] prog)
 
-
+||| MaxHeaderSize is the maximum size of an HTTP header
+||| MaxContentSize is the maximum size of an HTTP content
 %inline
 MaxHeaderSize, MaxContentSize : Nat
 MaxHeaderSize = 0xffff
 MaxContentSize = 0xffff_ffff
 
+||| SPACE is the space character
+||| COLON is the colon character
 %inline
 SPACE, COLON : Bits8
 SPACE = 32
@@ -109,7 +110,7 @@ assemble p = Prelude.do
 ||| 
 ||| @ req HTTP byte stream
 export
-request : HTTPStream ByteString -> HTTPPull o (Maybe Request)
+request : RequestBody -> HTTPPull o (Maybe Request)
 request req =
      breakAtSubstring pure "\r\n\r\n" req
   |> C.limit HeaderSizeExceeded MaxHeaderSize
@@ -117,11 +118,15 @@ request req =
   |> assemble
 
 
+||| getContentType is a function that returns the content type of a response
+||| @ response Response
+||| @ return String
+public export
 getContentType : Response -> String
 getContentType (JSONResponse _) = "application/json"
 getContentType (PlainTextResponse _) = "text/plain"
 
-||| Encode HTTP response
+||| encodeResponse' is a function that encodes an HTTP response
 ||| 
 ||| Generates an HTTP response ByteString with status code and body
 ||| @ status HTTP status code
@@ -148,17 +153,18 @@ encodeResponse' status response =
 
 
 ||| Generate 400 Bad Request response
+||| @ return ByteString
 export
 badRequest : ByteString
 badRequest = encodeResponse' 400 (PlainTextResponse "Bad Request")
 
-||| Handle a single client connection
+||| serve is a function that handles a single client connection
 ||| 
 ||| Reads client request and returns response, then closes the connection
 ||| @ app Application handler function
 ||| @ cli Client socket
 covering
-serve : (Request -> HTTPStream Response) -> Socket AF_INET -> Async Poll [] ()
+serve : HTTPApplication -> Socket AF_INET -> Async Poll [] ()
 serve app cli =
   flip guarantee (close' cli) $
     mpull $ handleErrors (\(Here x) => stderrLn "\{x}") $
@@ -177,9 +183,10 @@ serve app cli =
         Right () => pure ()
 
 
-||| Server configuration record type
+||| ServerConfig is a record type that contains server configuration
 ||| 
 ||| Contains server bind address and max connection count
+||| @ return ServerConfig
 public export
 record ServerConfig where
   constructor MkServerConfig
@@ -188,9 +195,10 @@ record ServerConfig where
   ||| Max allowed connections
   maxConns : Nat
 
-||| Default server configuration
+||| defaultConfig is a function that returns the default server configuration
 ||| 
 ||| Binds to 127.0.0.1:2222, max connections 128
+||| @ return ServerConfig
 public export
 defaultConfig : ServerConfig
 defaultConfig = MkServerConfig  {
@@ -198,18 +206,30 @@ defaultConfig = MkServerConfig  {
     maxConns = 128
   }
 
-||| Create and start HTTP server
+||| serverFunc is a function that creates and starts an HTTP server
 ||| 
 ||| Creates HTTP server according to the provided config and application
 ||| @ config Server configuration
 ||| @ app Application handler function
+||| @ return Prog [Errno] Void
 covering
 public export
-server : ServerConfig -> (Request -> HTTPStream Response) -> Prog [Errno] Void
-server config app =
+serverFunc : ServerConfig -> HTTPApplication -> Prog [Errno] Void
+serverFunc config app =
   let conn = acceptOn AF_INET SOCK_STREAM config.bind
       serve' = serve app
   in
   case config.maxConns of
     S k => foreachPar (S k) serve' conn
     Z   => foreachPar 1 serve' conn
+
+||| runServer is a function that runs the HTTP server
+||| @ config Server configuration
+||| @ server Server instance
+||| @ return IO ()
+covering
+public export
+runServer : ServerConfig -> Server -> IO ()
+runServer config server = do
+  let app = processRequest server
+  runServer' $ serverFunc config app

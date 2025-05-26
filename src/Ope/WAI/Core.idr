@@ -1,5 +1,4 @@
-||| The WAI.Core module defines the core types for the Web Application Interface
-||| Includes HTTP errors, methods, versions, and response types
+||| Define core types and functions
 module Ope.WAI.Core
 
 import Derive.Prelude
@@ -48,6 +47,7 @@ HTTPPull o r = AsyncPull Poll o [Errno,HTTPErr] r
 public export
 0 HTTPStream : Type -> Type
 HTTPStream o = AsyncPull Poll o [Errno,HTTPErr] ()
+
 
 ||| HTTP header type
 ||| Represented as a key-value map, both key and value are strings

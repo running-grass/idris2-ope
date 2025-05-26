@@ -1,0 +1,10 @@
+package ope-sample
+version = 0.1.0
+depends = 
+  streams-posix
+  , async-epoll
+  , json
+main = Ope.Sample.Main
+
+executable = "ope-sample"
+sourcedir = "src"

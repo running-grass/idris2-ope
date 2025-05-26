@@ -1,8 +1,6 @@
-||| The API module implements the core functionality of route matching and request handling
-||| Provides a mechanism to match HTTP requests with type-safe API definitions
+||| Define functions for route matching and request handling
 module Ope.API
 
-import Ope.Server.Type
 import Data.String
 import Data.List1
 import Data.SortedMap
@@ -19,6 +17,11 @@ import public Ope.WAI
 import JSON.ToJSON
 import JSON.FromJSON
 
+||| fillDefault is a function that fills a default value if the Maybe is Nothing
+||| @ def Default value
+||| @ maybe Maybe value
+||| @ return Maybe value
+public export
 fillDefault: Lazy a -> Maybe a -> Maybe a
 fillDefault def Nothing = Just def
 fillDefault _ (Just a) = Just a
@@ -42,7 +45,7 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
     method : Method
     method = req.method
 
-    matchPath : Maybe Params -> List String -> Path -> Maybe Params
+    matchPath : Maybe Params -> List String -> QueryParams -> Maybe Params
     matchPath Nothing [] _ = Nothing
     matchPath prevParams [s] (StaticPath path :> Nil) = 
         if s == path then (fillDefault emptyParams prevParams) else Nothing
@@ -100,7 +103,7 @@ executeHandler (path :-> (Post reqType resType)) handler req params =  bind hand
 ||| @ server Server instance
 ||| @ req HTTP request object
 public export
-processRequest : Server -> Request -> HTTPStream Response
+processRequest : Server -> HTTPApplication
 processRequest server req = 
   case findMatchingRoute server req of
     Just (route, params) => executeHandler route.api route.handler req params

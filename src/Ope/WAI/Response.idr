@@ -1,5 +1,4 @@
-||| The Response module implements the core functionality of the Web Application Interface
-||| Provides a mechanism to handle different response types
+||| Define response types and functions
 module Ope.WAI.Response
 
 import Ope.WAI.Core
@@ -20,6 +19,8 @@ public export
 notFoundResponse : Response
 notFoundResponse = PlainTextResponse "Not Found"
 
+||| 400 Bad Request response
+||| Returned when the request is invalid
 public export
 badRequestResponse : Response
 badRequestResponse = PlainTextResponse "Bad Request"

@@ -1,5 +1,4 @@
-||| The Request module implements the core functionality of the Web Application Interface
-||| Provides a mechanism to handle different request types
+||| Define request types and functions
 module Ope.WAI.Request
 
 import Ope.WAI.Core
@@ -28,6 +27,11 @@ method "POST" = Right POST
 method "HEAD" = Right HEAD
 method _      = Left InvalidRequest
 
+||| RequestBody is the type of request body
+||| It is a stream of bytes
+public export
+0 RequestBody : Type
+RequestBody = HTTPStream ByteString
 
 ||| HTTP request record type
 ||| Contains all relevant information for an HTTP request
@@ -49,5 +53,5 @@ record Request where
   ||| Request body content type
   type    : Maybe String
   ||| Request body byte stream
-  body    : HTTPStream ByteString
+  body    : RequestBody
 

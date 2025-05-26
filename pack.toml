@@ -4,6 +4,11 @@ path = "."
 ipkg = "ope.ipkg"
 test = "test/test.ipkg"
 
+[custom.all.sample]
+type = "local"
+path = "."
+ipkg = "sample.ipkg"
+
 [custom.all.ope-test]
 type = "local"
 path = "test"

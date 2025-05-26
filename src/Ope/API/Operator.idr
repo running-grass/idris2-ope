@@ -1,18 +1,18 @@
-||| The Operator module implements the core functionality of the API operator
-||| Provides a mechanism to handle different API operators
+||| Define operator precedences for the API DSL
 module Ope.API.Operator
 
--- 操作符 :> 优先级定义
+-- Operator :> is used to define a route with a handler function
 public export
 infixr 6 :>
 
--- 操作符 :-> 优先级定义
+-- Operator :-> is used to define a route with a handler function
 public export
 infixr 5 :->
 
--- 操作符 :<|> 优先级定义
+-- Operator :<|> is used to define a route with a handler function
 public export
 infixr 4 :<|>
 
+-- Operator :=> is used to define a route with a handler function
 public export
 infixr 5 :=>

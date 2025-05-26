@@ -19,13 +19,18 @@ depends =
   , json
 
 -- modules to install
--- modules = API.Core
+modules = 
+  Ope.WAI.Core
+  , Ope.WAI.Request
+  , Ope.WAI.Response
+  , Ope.WAI
 
--- main file (i.e. file to load at REPL)
-main = Main
+  , Ope.API.Operator
+  , Ope.API.Core
+  , Ope.API
 
--- name of executable
-executable = "ope-server"
+  , Ope.Server
+
 
 -- name of executable
 -- opts =
