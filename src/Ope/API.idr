@@ -45,7 +45,7 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
     method : Method
     method = req.method
 
-    matchPath : Maybe Params -> List String -> QueryParams -> Maybe Params
+    matchPath : Maybe Params -> List String -> Query -> Maybe Params
     matchPath Nothing [] _ = Nothing
     matchPath prevParams [s] (StaticPath path :> Nil) = 
         if s == path then (fillDefault emptyParams prevParams) else Nothing
@@ -58,12 +58,9 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 
     -- 合并后的路径匹配和参数提取逻辑
     matchAPIPath : List String -> API -> Maybe Params
-    matchAPIPath segments (path :-> (Get _)) = case method of
-      GET => matchPath Nothing segments path
-      _ => Nothing
-    matchAPIPath segments (path :-> (Post reqType resType)) = case method of
-      POST => matchPath Nothing segments path
-      _ => Nothing
+    matchAPIPath segments (path :-> endpoint) = case method == endpointToMethod endpoint of
+      True => matchPath Nothing segments path
+      False => Nothing
 
     -- 内部辅助函数，递归遍历路由列表
     findMatchingRoute' : List Route -> Maybe (Route, Params)
@@ -73,6 +70,32 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
         Just params => Just (route, params)
         Nothing => findMatchingRoute' routes
 
+
+private
+noResponse: (Params -> IO ()) -> Params -> HTTPResponse
+noResponse handler' params = liftIO (handler' params) >>= emit . JSONResponse
+
+private
+justResponse: ToJSON a => (Params -> IO a) -> Params -> HTTPResponse
+justResponse handler' params = liftIO (handler' params) >>= emit . JSONResponse
+
+
+private
+withRequestBody: ToJSON a => FromJSON r => (Params -> r -> IO a) -> RequestBody -> Params -> HTTPResponse
+withRequestBody handler' reqBody params = bind hand reqBody
+  where
+    hand : ByteString -> HTTPStream Response
+    hand bs = do
+      let reqBody = toString bs
+      let req : Either DecodingErr r = decode reqBody
+      case req of
+        Left err => emit badRequestResponse
+        Right req' => do
+          res <- liftIO $ handler' params req'
+          emit $ JSONResponse res
+
+ 
+
 ||| Execute the handler function
 ||| Executes the corresponding handler function according to the API type and extracted parameters
 ||| Wraps the result as a response object
@@ -81,21 +104,21 @@ findMatchingRoute (MkServer routes) req = findMatchingRoute' routes
 ||| @ params Parameters extracted from the URL
 public export
 executeHandler : (api : API) -> (handler : HandlerType api) -> 
-                  (req : Request) -> (params : Params)  -> HTTPStream Response
-executeHandler (path :-> Get _) handler req params = do
-  res <- liftIO $ handler params
-  emit $ JSONResponse res
-executeHandler (path :-> (Post reqType resType)) handler req params =  bind hand req.body
-  where
-    hand : ByteString -> HTTPStream Response
-    hand bs = do
-      let reqBody = toString bs
-      let req : Either DecodingErr reqType = decode reqBody
-      case req of
-        Left err => emit badRequestResponse
-        Right req' => do
-          res <- liftIO $ handler params req'
-          emit $ JSONResponse res
+                  (req : Request) -> (params : Params)  -> HTTPResponse
+executeHandler (path :-> endpoint) handler req params = do
+  case endpoint of
+    HEAD => noResponse handler params
+    CONNECT => noResponse handler params
+   
+    OPTIONS resType => justResponse handler params
+    TRACE resType => justResponse handler params
+    Get resType => justResponse handler params
+  
+    Post reqType resType => withRequestBody handler req.body params
+    Put reqType resType => withRequestBody handler req.body params
+    Delete reqType resType => withRequestBody handler req.body params
+    Patch reqType resType => withRequestBody handler req.body params
+
 
 ||| Handle HTTP request
 ||| Find the matching route, execute the handler function, and generate a response

@@ -3,6 +3,9 @@ module Ope.API.Core
 import public Ope.API.Operator
 import Data.SortedMap
 import JSON.Derive
+import Ope.WAI.Request
+
+
 %language ElabReflection
 
 %default total
@@ -22,30 +25,73 @@ public export
 implementation FromString PathSegment where
   fromString = StaticPath
 
-||| QueryParams represents a type-safe description of an API path
-||| By combining QueryParams constructors, you can build a complete route path
+||| Query represents a type-safe description of an API path
+||| By combining Query constructors, you can build a complete route path
 public export
-data QueryParams : Type where
+data Query : Type where
   ||| Empty query params, e.g. ""
-  Nil : QueryParams
+  Nil : Query
   ||| Query params record, e.g. "?all"
-  QueryAll : Type -> QueryParams
+  QueryAll : Type -> Query
   ||| Query params composition operator, used to connect two paths
   ||| For example: "api" :> "users" :> QueryAll User
-  (:>) : PathSegment -> QueryParams -> QueryParams  -- QueryParams composition
+  (:>) : PathSegment -> Query -> Query  -- Query composition
 
 ||| Endpoint represents an API endpoint, including HTTP method and response type
 ||| The resp parameter type carries response type information
 public export
 data Endpoint : Type -> Type -> Type where
+  -- No Request body and Response body
+
+  ||| CONNECT request endpoint, no request body and response body
+  CONNECT: Endpoint () ()
+
+  ||| HEAD request endpoint, no request body and response body
+  HEAD: Endpoint () () 
+
+
+  -- No Request body, but has Response body
+
+  ||| OPTIONS request endpoint, no request body and response body
+  OPTIONS: (resp : Type) -> Endpoint () resp
+
+  ||| TRACE request endpoint, no request body and response body
+  TRACE: (resp : Type) -> Endpoint () resp
+  
   ||| GET request endpoint, resp specifies the return type
   ||| For example: Get String, Get User, Get (List Product)
   Get : (resp : Type) -> Endpoint () resp
+  
+   -- Has Request body and Response body
 
   ||| POST request endpoint, req specifies the request type, resp specifies the return type
   ||| For example: Post User String, Post User (List Product)
   Post : (req : Type) -> (resp : Type) -> Endpoint req resp
-  -- Can be extended to add Post, Put, Delete and other HTTP methods
+
+  ||| PUT request endpoint, req specifies the request type, resp specifies the return type
+  ||| For example: Put User String, Put User (List Product)
+  Put : (req : Type) -> (resp : Type) -> Endpoint req resp
+
+  ||| DELETE request endpoint, req specifies the request type, resp specifies the return type
+  ||| For example: Delete User String, Delete User (List Product)
+  Delete : (req : Type) -> (resp : Type) -> Endpoint req resp
+
+  ||| PATCH request endpoint, req specifies the request type, resp specifies the return type
+  ||| For example: Patch User String, Patch User (List Product)
+  Patch : (req : Type) -> (resp : Type) -> Endpoint req resp
+
+||| Convert an Endpoint to a Method
+public export
+endpointToMethod : Endpoint req resp -> Method
+endpointToMethod HEAD = HEAD
+endpointToMethod CONNECT = CONNECT
+endpointToMethod (OPTIONS resType) = OPTIONS
+endpointToMethod (TRACE resType) = TRACE
+endpointToMethod (Get resType) = GET
+endpointToMethod (Post reqType resType) = POST
+endpointToMethod (Put reqType resType) = PUT
+endpointToMethod (Delete reqType resType) = DELETE
+endpointToMethod (Patch reqType resType) = PATCH
 
 ||| API type combines path and endpoint into a complete API description
 ||| It is the core of the type-safe API framework
@@ -54,15 +100,24 @@ data API : Type where
   ||| Connects path and endpoint to form a complete API
   ||| Show resp constraint ensures the response type can be serialized
   ||| For example: StaticPath "users" :> Get (List User)
-  (:->) : FromJSON req => ToJSON resp => Show resp => QueryParams -> Endpoint req resp -> API
+  (:->) : FromJSON req => ToJSON resp => Show resp => Query -> Endpoint req resp -> API
+
 
 
 ||| EndpointResult is a type function that computes the response type of an endpoint
 ||| It extracts the response type information from the Endpoint type
 public export
 EndpointResult : Endpoint req resp -> Type
+EndpointResult HEAD = ()
+EndpointResult CONNECT = ()
+
+EndpointResult (OPTIONS resType) = resType
+EndpointResult (TRACE resType) = resType
 EndpointResult (Get resType) = resType -- GET method returns the specified response type
-EndpointResult (Post reqType resType) = reqType
+EndpointResult (Post reqType resType) = resType
+EndpointResult (Put reqType resType) = resType
+EndpointResult (Delete reqType resType) = resType
+EndpointResult (Patch reqType resType) = resType
 
 ||| Params is a type for query parameters
 ||| It is a map of parameter names to their values
@@ -83,10 +138,17 @@ emptyParams = empty
 ||| For example: HandlerType for API "users/:id" will be (id -> User)
 public export
 HandlerType : API -> Type
+HandlerType (path :-> HEAD) = Params -> IO ()
+HandlerType (path :-> CONNECT) = Params -> IO ()
+
+HandlerType (path :-> (OPTIONS resType)) = Params -> IO resType
+HandlerType (path :-> (TRACE resType)) = Params -> IO resType
 HandlerType (path :-> (Get resType)) = Params -> IO resType
+
 HandlerType (path :-> (Post reqType resType)) = Params -> reqType -> IO resType
--- This version ignores path parameters, the complete version should be:
--- HandlerType (path :> endpoint) = PathParam path (EndpointResult endpoint)
+HandlerType (path :-> (Put reqType resType)) = Params -> reqType -> IO resType
+HandlerType (path :-> (Delete reqType resType)) = Params -> reqType -> IO resType
+HandlerType (path :-> (Patch reqType resType)) = Params -> reqType -> IO resType
 
 
 ||| Route record type

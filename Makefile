@@ -3,16 +3,16 @@ default: build
 .PHONY: build clean check run dev
 
 build: check
-	pack build
+	pack build ope.ipkg
 
 clean:
-	pack clean
+	pack clean ope.ipkg && pack clean sample.ipkg
 
 check:
-	pack typecheck && echo "\n\nCheck done\n\n"
+	pack typecheck ope.ipkg && pack typecheck sample.ipkg && echo "\n\nCheck done\n\n"
 
 run:
-	pack run
+	pack run sample.ipkg
 
 watch:
 	find src | entr make check

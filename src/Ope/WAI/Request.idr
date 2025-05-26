@@ -11,9 +11,14 @@ import Derive.Prelude
 ||| HTTP method enum
 ||| Defines supported HTTP request methods
 public export
-data Method = GET | POST | HEAD
+data Method =
+  HEAD | CONNECT 
+  | OPTIONS | TRACE | GET
+  | POST | PUT | PATCH | DELETE
 
 %runElab derive "Method" [Show,Eq,Ord]
+
+
 
 
 ||| Parse HTTP method string
@@ -22,10 +27,19 @@ data Method = GET | POST | HEAD
 ||| @ s Method string (e.g. "GET", "POST", etc.)
 public export
 method : String -> Either HTTPErr Method
-method "GET"  = Right GET
-method "POST" = Right POST
 method "HEAD" = Right HEAD
-method _      = Left InvalidRequest
+method "CONNECT" = Right CONNECT
+
+method "OPTIONS" = Right OPTIONS
+method "TRACE" = Right TRACE
+method "GET" = Right GET
+
+method "POST" = Right POST
+method "PUT" = Right PUT
+method "PATCH" = Right PATCH
+method "DELETE" = Right DELETE
+method _ = Left InvalidRequest
+
 
 ||| RequestBody is the type of request body
 ||| It is a stream of bytes
