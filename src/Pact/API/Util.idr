@@ -1,6 +1,6 @@
-module Ope.API.Util
+module Pact.API.Util
 
-import Ope.API.Core
+import Pact.API.Core
 import Data.Vect
 import Data.Vect.Quantifiers
 
@@ -20,7 +20,7 @@ data Path : Type -> Vect (S n) Type -> Type where
 |||
 ||| Returns a vector of the parsed path parameters.
 public export
-parsePathParams : { n : Nat } -> ( pts: Vect n Type ) ->  {auto allprf :  All PathParams pts } -> (raw : Vect n String) -> Maybe (HVect pts)
+parsePathParams : { n : Nat } -> ( pts: Vect n Type ) ->  {auto allprf :  All HasPathParam pts } -> (raw : Vect n String) -> Maybe (HVect pts)
 parsePathParams [] []  = Just []
 parsePathParams {n=S n} (t :: ts)  { allprf = prf :: prfs } (r :: rs) = case mVal of
   Just val => case parsePathParams ts rs of
@@ -45,7 +45,7 @@ getCaptureName _ = "unknown"
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchPath : { n: Nat } -> {ts: Vect (S n) Type} -> Path t ts -> Vect (S n) String -> { auto allprf : All PathParams ts } -> Either String (HVect ts)
+matchPath : { n: Nat } -> {ts: Vect (S n) Type} -> Path t ts -> Vect (S n) String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
 matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
 matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parsePathParams seg  of
   Just val => Right [val]

@@ -1,7 +1,7 @@
-[custom.all.ope]
+[custom.all.pact]
 type = "local"
 path = "."
-ipkg = "ope.ipkg"
+ipkg = "pact.ipkg"
 test = "test/test.ipkg"
 
 [custom.all.sample]
@@ -9,7 +9,13 @@ type = "local"
 path = "."
 ipkg = "sample.ipkg"
 
-[custom.all.ope-test]
+[custom.all.pact-test]
 type = "local"
 path = "test"
 ipkg = "test.ipkg"
+
+[custom.all.records]
+type = "github"
+url = "git@github.com:kuribas/idris-records.git"
+commit = "main"
+ipkg = "records.ipkg"

@@ -1,7 +1,7 @@
 ||| Define request types and functions
-module Ope.WAI.Request
+module Pact.WAI.Request
 
-import Ope.WAI.Core
+import Pact.WAI.Core
 import Data.SortedMap
 
 import Derive.Prelude

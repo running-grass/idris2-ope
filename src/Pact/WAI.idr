@@ -1,9 +1,9 @@
 ||| Define types and functions for Web Application Interface
-module Ope.WAI
+module Pact.WAI
 
-import public Ope.WAI.Core
-import public Ope.WAI.Request
-import public Ope.WAI.Response
+import public Pact.WAI.Core
+import public Pact.WAI.Request
+import public Pact.WAI.Response
 
 import FS.Posix
 import IO.Async.Loop.Posix

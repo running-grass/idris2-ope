@@ -1,5 +1,5 @@
 ||| Define core types and functions
-module Ope.WAI.Core
+module Pact.WAI.Core
 
 import Derive.Prelude
 import Data.SortedMap

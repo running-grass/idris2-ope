@@ -1,5 +1,5 @@
 ||| Define operator precedences for the API DSL
-module Ope.API.Operator
+module Pact.API.Operator
 
 -- Operator :/ is used to define a route with a handler function
 public export

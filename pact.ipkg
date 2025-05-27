@@ -1,4 +1,4 @@
-package ope
+package pact
 version = 0.1.0
 authors = "running-grass"
 -- maintainers =
@@ -20,16 +20,16 @@ depends =
 
 -- modules to install
 modules = 
-  Ope.WAI.Core
-  , Ope.WAI.Request
-  , Ope.WAI.Response
-  , Ope.WAI
+  Pact.WAI.Core
+  , Pact.WAI.Request
+  , Pact.WAI.Response
+  , Pact.WAI
 
-  , Ope.API.Operator
-  , Ope.API.Core
-  , Ope.API
+  , Pact.API.Operator
+  , Pact.API.Core
+  , Pact.API
 
-  , Ope.Server
+  , Pact.Server
 
 
 -- name of executable

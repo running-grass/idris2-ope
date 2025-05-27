@@ -1,7 +1,7 @@
 ||| Define response types and functions
-module Ope.WAI.Response
+module Pact.WAI.Response
 
-import Ope.WAI.Core
+import Pact.WAI.Core
 import JSON.ToJSON
 
 ||| Response data type

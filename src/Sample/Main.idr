@@ -1,9 +1,9 @@
 ||| Define example API routes and handler functions
-module Ope.Sample.Main
+module Sample.Main
 
-import Ope.Server
-import Ope.API
-import Ope.API.Core
+import Pact.Server
+import Pact.API
+import Pact.API.Core
 
 import Data.SortedMap
 
@@ -12,7 +12,7 @@ import FS.Posix
 import public IO.Async.Loop.Posix
 import public IO.Async.Loop.Epoll
 
-import Ope.WAI
+import Pact.WAI
 
 import Data.String
 

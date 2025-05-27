@@ -1,10 +1,13 @@
-package ope-sample
+package pact-sample
 version = 0.1.0
 depends = 
   streams-posix
   , async-epoll
   , json
-main = Ope.Sample.Main
+  , contrib
+  , records
 
-executable = "ope-sample"
+main = Sample.Main
+
+executable = "pact-sample"
 sourcedir = "src"

@@ -1,5 +1,5 @@
 ||| Define the core functionality of the HTTP server
-module Ope.Server
+module Pact.Server
 
 import public Data.SortedMap
 import Data.ByteVect as BV
@@ -14,10 +14,10 @@ import public System
 
 import Derive.Prelude
 
-import Ope.WAI.Core
-import Ope.WAI.Request
-import Ope.WAI.Response
-import Ope.API
+import Pact.WAI.Core
+import Pact.WAI.Request
+import Pact.WAI.Response
+import Pact.API
 
 %default total
 

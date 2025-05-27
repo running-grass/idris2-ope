@@ -1,10 +1,13 @@
 ||| Define functions for route matching and request handling
-module Ope.API
+module Pact.API
 
 import Data.String
 import Data.List1
 import Data.SortedMap
-import public Ope.API.Core
+
+import public Pact.API.Operator
+import public Pact.API.Core
+import public Pact.API.Endpoint
 
 import FS.Posix
 import FS.Socket
@@ -13,7 +16,7 @@ import IO.Async.Loop.Posix
 import IO.Async.Loop.Epoll
 import FS.Concurrent
 
-import public Ope.WAI
+import public Pact.WAI
 import JSON.ToJSON
 import JSON.FromJSON
 
