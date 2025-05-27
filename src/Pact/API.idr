@@ -20,6 +20,9 @@ import public Pact.WAI
 import JSON.ToJSON
 import JSON.FromJSON
 
+
+import Data.Vect
+
 ||| fillDefault is a function that fills a default value if the Maybe is Nothing
 ||| @ def Default value
 ||| @ maybe Maybe value
@@ -36,7 +39,11 @@ public export
 segments : String -> List String
 segments path = filter (/= "") . forget . split (== '/') $ path
 
-
+segments' : String -> ( n ** Vect n String)
+segments' path = (length segs ** fromList segs)
+  where
+  segs : List String
+  segs = filter (/= "") . forget . split (== '/') $ path
 
 matchPath : List String -> Query -> Bool
 matchPath [] _ = False

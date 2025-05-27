@@ -4,15 +4,18 @@ import Pact.API.Core
 import Data.Vect
 import Data.Vect.Quantifiers
 import JSON
-import Pact.API.Endpoint
-
+import public Pact.API.Endpoint
+import public Pact.API.Operator
+import public Pact.API.HasPathParam
 import JSON.Derive
+import Decidable.Equality
+import Data.Nat
 
 %language ElabReflection
 %hide Pact.API.Core.API
 
 public export
-data Path : Type -> Vect (S n) Type -> Type where
+data Path : Type -> Vect n Type -> Type where
   ||| Static path segment, e.g. "users"
   StaticPath : String -> Path () [()]
   ||| Captured path segment, e.g. ":id"
@@ -30,7 +33,7 @@ data Path : Type -> Vect (S n) Type -> Type where
 public export
 parsePathParams : { n : Nat } -> ( pts: Vect n Type ) ->  {auto allprf :  All HasPathParam pts } -> (raw : Vect n String) -> Maybe (HVect pts)
 parsePathParams [] []  = Just []
-parsePathParams {n=S n} (t :: ts)  { allprf = prf :: prfs } (r :: rs) = case mVal of
+parsePathParams  (t :: ts)  { allprf = prf :: prfs } (r :: rs) = case mVal of
   Just val => case parsePathParams ts rs of
     Just vals => Just (val :: vals)
     Nothing => Nothing
@@ -53,7 +56,7 @@ getCaptureName _ = "unknown"
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchPath : { n: Nat } -> {ts: Vect (S n) Type} -> Path t ts -> Vect (S n) String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
+matchPath : { n: Nat } -> {ts: Vect (n) Type} -> Path t ts -> Vect (n) String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
 matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
 matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parsePathParams seg  of
   Just val => Right [val]
@@ -72,9 +75,13 @@ matchPath _ segs = Left ("unknown path" ++ show segs)
 namespace API
 
   public export
-  data API : Type where
+  data API : ( ts: Vect n Type) -> Type where
     (:/) : (FromJSON req, ToJSON resp) 
-       => { ts: Vect (S n) Type} -> (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API
+       => (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API ts
+
+matchAPI : {n : Nat} -> {ts : Vect n Type} -> API ts -> Vect n String -> Either String (HVect ts)
+matchAPI (path :/ ep) segs = matchPath path segs
+
 
 record UserId where
   constructor MkUserId
@@ -101,7 +108,7 @@ record User where
 |||
 ||| Returns the type of the path.
 public export
-GetPathType : { ts : Vect (S n) Type } -> Path _ ts -> (epType : Type) -> Type
+GetPathType : { ts : Vect n Type } -> Path _ ts -> (epType : Type) -> Type
 GetPathType (StaticPath _) epType = epType
 GetPathType (Capture _ t) epType = t -> epType
 GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathType restPath epType in case path of
@@ -109,11 +116,32 @@ GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathTy
   _ => epType'
 
 public export
-GetHandlerType : API -> Type
+GetHandlerType : { ts: Vect n Type } -> API ts -> Type
 GetHandlerType (path :/ ep) = GetPathType path $ GetEndpointType ep
 
+
+
+
+||| Route record type
+||| Associates an API definition with its handler function
+public export
+record RouteItem { ts: Vect n Type } where
+  constructor (:=>)
+  ||| API definition, describes path and endpoint
+  api: API ts
+  ||| Handler function, type is determined by the API definition
+  handler : GetHandlerType api
+
+||| Server data type
+||| Contains a set of route definitions for handling HTTP requests
+public export
+data Router: Type where
+  ||| Creates a server instance containing a list of routes
+  MkRouter : (routes : List RouteItem) -> Router
+
+
 vals : Vect 3 String
-vals = ["users", "2ss", "3dd"]
+vals = ["users", "2", "3dd"]
 
 Tys : Vect 3 Type
 Tys = [Bool, Int, String]
@@ -133,12 +161,17 @@ p4 = StaticPath "users" :/ p2 :/ Capture "name" String
 ep1 : Endpoint () User
 ep1 = Get User
 
-api : API
+-- api : API
 api = p3 :/ ep1
 
 -- handleType = GetHandlerType api
 
 res = matchPath p3 vals
 
+h1 = GetHandlerType api
+
+r1 = matchAPI api vals
+
 -- res : Maybe (HVect Tys)
--- res = parsePathParams Tys vals
+-- res = parsePathParams Tys valsa
+
