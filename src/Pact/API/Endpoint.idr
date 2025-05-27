@@ -64,3 +64,17 @@ endpointToMethod (Patch reqType resType) = PATCH
 public export
 EndpointResult : {resp : Type} -> Endpoint req resp -> Type
 EndpointResult _ = resp
+
+public export
+GetEndpointType : Endpoint req resp -> Type
+GetEndpointType HEAD = IO ()
+GetEndpointType CONNECT = IO ()
+
+GetEndpointType (OPTIONS resType) = IO resType
+GetEndpointType (TRACE resType) = IO resType
+GetEndpointType (Get resType) = IO resType
+
+GetEndpointType (Post reqType resType) = reqType -> IO resType
+GetEndpointType (Put reqType resType) = reqType -> IO resType
+GetEndpointType (Delete reqType resType) = reqType -> IO resType
+GetEndpointType (Patch reqType resType) = reqType -> IO resType
