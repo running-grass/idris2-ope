@@ -24,7 +24,7 @@ data Path : Type -> Vect n Type -> Type where
   ||| Captured path segment, e.g. ":id"
   Capture : String -> (a : Type) -> Path a [a]
 
-  (:/) : Path tl tsl -> Path tr tsr -> Path tl (tl :: tsr)
+  (:/) : Path tl [tl] -> Path tr tsr -> Path tl (tl :: tsr)
 
 ||| Parse a vector of path parameters into a vector of types.
 |||
@@ -111,7 +111,7 @@ record User where
 |||
 ||| Returns the type of the path.
 public export
-GetPathType : { ts : Vect n Type } -> Path _ ts -> (epType : Type) -> Type
+GetPathType : Path _ ts -> (epType : Type) -> Type
 GetPathType (StaticPath _) epType = epType
 GetPathType (Capture _ t) epType = t -> epType
 GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathType restPath epType in case path of
@@ -119,7 +119,7 @@ GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathTy
   _ => epType'
 
 public export
-GetHandlerType : { ts: Vect n Type } -> API ts -> Type
+GetHandlerType : API ts -> Type
 GetHandlerType (path :/ ep) = GetPathType path $ GetEndpointType ep
 
 
@@ -168,11 +168,27 @@ findOnRouter (MkRouter routes) s = case strToVect s of
   (n ** segs) => findRouteItem routes segs
 
 
-GetEndpointTypeFromRouteItem : RouteItem -> Type
-GetEndpointTypeFromRouteItem ((path :/ ep) :=> _) = GetEndpointType ep
+GetEPFromAPI : API tss -> Type
+GetEPFromAPI (path :/ ep) = GetEndpointType ep
 
-applyHandlerWithRequest : (routeItem : RouteItem) -> (req : Request) -> (GetEndpointTypeFromRouteItem routeItem)
-applyHandlerWithRequest ((path :/ ep) :=> handler) req = ?ta
+GetEndpointTypeFromRouteItem : RouteItem -> Type
+GetEndpointTypeFromRouteItem (api :=> handler) = GetEPFromAPI api
+
+applyHandler : (api : API tts) -> (params: HVect tts) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType api) -> GetEPFromAPI api
+applyHandler ((StaticPath _) :/ ep) [()] handler = handler
+applyHandler ((Capture _ t) :/ ep) [param] handler = handler param
+applyHandler (((StaticPath _) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler (path' :/ ep) params handler
+applyHandler (((Capture _ t) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler (path' :/ ep) params $ handler param
+
+applyHandlerWithRequest : (routeItem : RouteItem) -> (req : Request) -> Maybe (GetEndpointTypeFromRouteItem routeItem)
+applyHandlerWithRequest (api@(path :/ ep) :=> handler) req = 
+  let uri = req.uri
+      (_ ** segs) = strToVect uri
+      eParams = matchPath path segs
+  in case eParams of
+    (Right params) => Just $ applyHandler (path :/ ep) params handler
+    _ => Nothing
+
 
 vals : Vect 3 String
 vals = ["users", "2", "3dd"]
@@ -208,14 +224,15 @@ H1 = GetHandlerType api
 
 r1 = matchAPI api vals
 
-hander1 : H1
-hander1 name userId pass = pure $ MkUser userId name
+handler1 : H1
+handler1 name userId pass = pure $ MkUser userId name
 
-route1 = api :=> hander1
+route1 = api :=> handler1
 
 router : Router
-router = MkRouter [api :=> hander1]
+router = MkRouter [api :=> handler1]
 
 -- res : Maybe (HVect Tys)
 -- res = parsePathParams Tys valsa
 
+res1 = applyHandler api ["grass", MkUserId 2, "pass"] handler1

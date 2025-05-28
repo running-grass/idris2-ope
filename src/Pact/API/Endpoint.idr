@@ -74,7 +74,7 @@ GetEndpointType (OPTIONS resType) = IO resType
 GetEndpointType (TRACE resType) = IO resType
 GetEndpointType (Get resType) = IO resType
 
-GetEndpointType (Post reqType resType) = reqType -> IO resType
-GetEndpointType (Put reqType resType) = reqType -> IO resType
-GetEndpointType (Delete reqType resType) = reqType -> IO resType
-GetEndpointType (Patch reqType resType) = reqType -> IO resType
+GetEndpointType (Post reqType resType) = IO resType
+GetEndpointType (Put reqType resType) = IO resType
+GetEndpointType (Delete reqType resType) = IO resType
+GetEndpointType (Patch reqType resType) = IO resType
