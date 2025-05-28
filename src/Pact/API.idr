@@ -39,12 +39,6 @@ public export
 segments : String -> List String
 segments path = filter (/= "") . forget . split (== '/') $ path
 
-segments' : String -> ( n ** Vect n String)
-segments' path = (length segs ** fromList segs)
-  where
-  segs : List String
-  segs = filter (/= "") . forget . split (== '/') $ path
-
 matchPath : List String -> Query -> Bool
 matchPath [] _ = False
 matchPath [s] (StaticPath path :/ _) = 

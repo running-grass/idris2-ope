@@ -1,4 +1,5 @@
-module Pact.API.Exp
+||| Experimental API definition
+module Pact.API.Experimental
 
 import Pact.API.Core
 import Data.Vect
@@ -7,6 +8,8 @@ import JSON
 import public Pact.API.Endpoint
 import public Pact.API.Operator
 import public Pact.API.HasPathParam
+import Pact.WAI.Request
+
 import JSON.Derive
 import Decidable.Equality
 import Data.Nat
@@ -56,7 +59,7 @@ getCaptureName _ = "unknown"
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchPath : { n: Nat } -> {ts: Vect (n) Type} -> Path t ts -> Vect (n) String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
+matchPath : Path t ts -> Vect m String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
 matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
 matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parsePathParams seg  of
   Just val => Right [val]
@@ -79,7 +82,7 @@ namespace API
     (:/) : (FromJSON req, ToJSON resp) 
        => (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API ts
 
-matchAPI : {n : Nat} -> {ts : Vect n Type} -> API ts -> Vect n String -> Either String (HVect ts)
+matchAPI : API ts -> Vect m String -> Either String (HVect ts)
 matchAPI (path :/ ep) segs = matchPath path segs
 
 
@@ -125,12 +128,14 @@ GetHandlerType (path :/ ep) = GetPathType path $ GetEndpointType ep
 ||| Route record type
 ||| Associates an API definition with its handler function
 public export
-record RouteItem { ts: Vect n Type } where
+record RouteItem where
   constructor (:=>)
+  { ts : Vect len Type}
   ||| API definition, describes path and endpoint
   api: API ts
   ||| Handler function, type is determined by the API definition
   handler : GetHandlerType api
+
 
 ||| Server data type
 ||| Contains a set of route definitions for handling HTTP requests
@@ -139,6 +144,35 @@ data Router: Type where
   ||| Creates a server instance containing a list of routes
   MkRouter : (routes : List RouteItem) -> Router
 
+
+matchRouteItem : RouteItem -> Vect m String -> Bool
+matchRouteItem (api :=> handler) ss = case matchAPI api ss of
+  Right vals => True
+  Left err => False
+
+
+findRouteItem : List RouteItem -> Vect m String -> Maybe RouteItem
+findRouteItem [] _ = Nothing
+findRouteItem (item :: routes) segs = case matchRouteItem item segs of
+    True => Just item
+    False => findRouteItem routes segs
+
+strToVect : String -> (n ** Vect n String)
+strToVect s = (length list ** fromList list)
+  where
+  list : List String
+  list = filter (/= "") . forget . split (== '/') $ s 
+
+findOnRouter  : Router -> String -> Maybe RouteItem
+findOnRouter (MkRouter routes) s = case strToVect s of
+  (n ** segs) => findRouteItem routes segs
+
+
+GetEndpointTypeFromRouteItem : RouteItem -> Type
+GetEndpointTypeFromRouteItem ((path :/ ep) :=> _) = GetEndpointType ep
+
+applyHandlerWithRequest : (routeItem : RouteItem) -> (req : Request) -> (GetEndpointTypeFromRouteItem routeItem)
+applyHandlerWithRequest ((path :/ ep) :=> handler) req = ?ta
 
 vals : Vect 3 String
 vals = ["users", "2", "3dd"]
@@ -168,9 +202,19 @@ api = p3 :/ ep1
 
 res = matchPath p3 vals
 
-h1 = GetHandlerType api
+H1 = GetHandlerType api
+
+
 
 r1 = matchAPI api vals
+
+hander1 : H1
+hander1 name userId pass = pure $ MkUser userId name
+
+route1 = api :=> hander1
+
+router : Router
+router = MkRouter [api :=> hander1]
 
 -- res : Maybe (HVect Tys)
 -- res = parsePathParams Tys valsa
