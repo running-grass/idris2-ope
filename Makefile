@@ -3,16 +3,16 @@ default: build
 .PHONY: build clean check run dev
 
 build: check
-	pack build pact.ipkg
+	pack build sample.ipkg
 
 clean:
-	pack clean pact.ipkg && pack clean sample.ipkg
+	pack clean pact-api && pack clean pact-wai && pack clean pact-server && pack clean pact-sample
 
 check:
-	pack typecheck pact.ipkg && pack typecheck sample.ipkg && echo "\n\nCheck done\n\n"
+	pack typecheck pact-sample
 
 run:
-	pack run sample.ipkg
+	pack run pact-sample
 
 watch:
 	find src | entr make check

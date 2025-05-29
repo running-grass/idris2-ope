@@ -1,21 +1,22 @@
-[custom.all.pact]
+[custom.all.pact-api]
 type = "local"
-path = "."
-ipkg = "pact.ipkg"
+path = "api"
+ipkg = "pact-api.ipkg"
 test = "test/test.ipkg"
 
-[custom.all.sample]
+[custom.all.pact-wai]
 type = "local"
-path = "."
-ipkg = "sample.ipkg"
+path = "wai"
+ipkg = "pact-wai.ipkg"
+test = "test/test.ipkg"
 
-[custom.all.pact-test]
+[custom.all.pact-server]
 type = "local"
-path = "test"
-ipkg = "test.ipkg"
+path = "server"
+ipkg = "pact-server.ipkg"
+test = "test/test.ipkg"
 
-[custom.all.records]
-type = "github"
-url = "git@github.com:kuribas/idris-records.git"
-commit = "main"
-ipkg = "records.ipkg"
+[custom.all.pact-sample]
+type = "local"
+path = "sample"
+ipkg = "pact-sample.ipkg"

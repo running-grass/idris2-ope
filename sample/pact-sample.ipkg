@@ -6,6 +6,9 @@ depends =
   , json
   , contrib
   , records
+  , pact-api
+  , pact-wai
+  , pact-server
 
 main = Sample.Main1
 

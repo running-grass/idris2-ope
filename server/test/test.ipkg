@@ -1,4 +1,4 @@
-package pact-test
+package pact-server-test
 version = 0.1.0
 authors = "running-grass"
 -- maintainers =
@@ -13,7 +13,7 @@ authors = "running-grass"
 -- langversion
 
 -- packages to add to search path
-depends = pact
+depends = server
 
 -- modules to install
 -- modules =
@@ -22,7 +22,7 @@ depends = pact
 main = Main
 
 -- name of executable
-executable = "pact-test"
+executable = "server-test"
 -- opts =
 sourcedir = "src"
 -- builddir =
