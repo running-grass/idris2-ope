@@ -10,7 +10,10 @@ depends =
   , pact-wai
   , pact-server
 
-main = Sample.Main1
+main = Sample.Main
+
+modules = Sample.Main, Sample.Old, Sample.SqaDemo
+
 
 executable = "pact-sample"
 sourcedir = "src"

@@ -2,7 +2,9 @@
 module Pact.WAI.Response
 
 import Pact.WAI.Core
-import JSON.ToJSON
+
+import public JSON.FromJSON
+import public JSON.ToJSON
 
 ||| Response data type
 ||| Unified handling of different response types
@@ -32,4 +34,3 @@ public export
 renderResponse : Response -> String
 renderResponse (JSONResponse a) = encode a
 renderResponse (PlainTextResponse value) = show value
-

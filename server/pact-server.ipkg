@@ -16,7 +16,7 @@ authors = "running-grass"
 depends = pact-wai, pact-api
 
 -- modules to install
-modules = Pact.Server
+modules = Pact.Server, Pact.Server.Core, Pact.Server.HTTP, Pact.Server.Util
 
 -- main file (i.e. file to load at REPL)
 -- main =

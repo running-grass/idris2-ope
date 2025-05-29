@@ -2,7 +2,7 @@
 module Pact.WAI.Core
 
 import Derive.Prelude
-import Data.SortedMap
+import public Data.SortedMap
 
 import FS.Posix
 import FS.Socket
@@ -12,6 +12,9 @@ import IO.Async.Loop.Epoll
 import public Data.ByteVect
 import public System.Posix.Errno.Type
 import public IO.Async.Loop.Posix
+
+%default total
+%default covering
 
 %language ElabReflection
 
@@ -56,14 +59,21 @@ HTTPStream o = AsyncPull Poll o [Errno,HTTPErr] ()
 public export
 0 Headers : Type
 Headers = SortedMap String String
+
+||| HTTP Query parameter type
+||| Represented as a key-value map, both key and value are strings
+public export
+0 QueryParams : Type
+QueryParams = SortedMap String String
+
 ||| HTTP version enum
 ||| Defines supported HTTP protocol versions
 public export
 data Version = V10 | V11 | V20
 
-%default total
-%default covering
 %runElab derive "Version" [Show,Eq,Ord]
+
+
 ||| Parse HTTP version string
 ||| 
 ||| Convert string to Version enum value
@@ -79,3 +89,11 @@ version _          = Left InvalidRequest
 ||| Similar to Servant's JSON/PlainText content types
 public export
 data ContentType = JSON | PlainText
+
+||| Parse content type string
+||| @ s Content type string (e.g. "application/json", "text/plain", etc.)
+public export
+parseContentType : String -> Either HTTPErr ContentType
+parseContentType "application/json" = Right JSON
+parseContentType "text/plain"      = Right PlainText
+parseContentType _                 = Left InvalidRequest

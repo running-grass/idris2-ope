@@ -1,4 +1,6 @@
 module Sample.SqaDemo
+
+
 import Data.String
 import Data.Maybe
 import Data.List

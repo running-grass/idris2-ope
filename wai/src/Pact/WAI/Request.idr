@@ -2,7 +2,7 @@
 module Pact.WAI.Request
 
 import Pact.WAI.Core
-import Data.SortedMap
+import public Data.SortedMap
 
 import Derive.Prelude
 
@@ -17,8 +17,6 @@ data Method =
   | POST | PUT | PATCH | DELETE
 
 %runElab derive "Method" [Show,Eq,Ord]
-
-
 
 
 ||| Parse HTTP method string
@@ -57,7 +55,7 @@ record Request where
   ||| Request URI path
   uri     : String
   ||| Query parameter map
-  queryParams : SortedMap String String
+  queryParams : QueryParams
   ||| HTTP version
   version : Version
   ||| HTTP header fields map

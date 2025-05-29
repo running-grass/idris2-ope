@@ -13,12 +13,15 @@ authors = "running-grass"
 -- langversion
 
 -- packages to add to search path
-depends =
-  pact-wai
-  , json
+depends = json
 
 -- modules to install
-modules = Pact.API.Operator, Pact.API.Core, Pact.API, Pact.API.Endpoint, Pact.API.HasPathParam, Pact.API.Experimental
+modules = Pact.API.Operator, 
+          Pact.API, 
+          Pact.API.Core,
+          Pact.API.Endpoint, 
+          Pact.API.HasPathParam,
+          Pact.API.Util
 
 -- main file (i.e. file to load at REPL)
 -- main =

@@ -2,68 +2,55 @@
 module Sample.Main
 
 import Pact.Server
-import Pact.API
-import Pact.API.Core
-
-import Data.SortedMap
-
-import FS.Posix
-
-import public IO.Async.Loop.Posix
-import public IO.Async.Loop.Epoll
-
-import Pact.WAI
-
-import Data.String
 
 import JSON.Derive
 
 %language ElabReflection
 
-||| Example user data type.
+record UserId where
+  constructor MkUserId
+  id : Nat 
+
+implementation HasPathParam UserId where
+  parsePathParams s = case parsePositive s of
+    Just n => Just (MkUserId n)
+    Nothing => Nothing
+
+%runElab derive "UserId" [Show,Eq,ToJSON, FromJSON]
+
 record User where
   constructor MkUser
-  id: String
-  name: String
-  age: Int
+  id : UserId
+  name : String
 
 %runElab derive "User" [Show,Eq,ToJSON, FromJSON]
 
-map1 : Params
-map1 = insert "id" "1" emptyParams
+p1 : Path () [()]
+p1 = StaticPath "users"
 
-user1 : User
-user1 = MkUser "1" "John" 20
+p2 : Path UserId [UserId]
+p2 = Capture "id" UserId
 
-||| Example GET API: get user by id.
-Api1 : API
-Api1 = "users" :/ Nil :-> Get User
+p3 : Path String [String, UserId, String]
+p3 = Capture "users" String :/ p2 :/ Capture "name" String
 
-||| Example GET API handler, returns a fixed user.
-handler1 : HandlerType Api1
-handler1 params = do
-  let id = fromMaybe "" (lookup "id" params)
-  pure $ user1
+p4 : Path () [(), UserId, String]
+p4 = StaticPath "users" :/ p2 :/ Capture "name" String
 
-||| Example POST API: create a user by id and return a user list.
-Api2 : API
-Api2 = "users" :/ Capture "id" String :/ Nil :-> Post User (List User)
+ep1 : Endpoint () User
+ep1 = Get User
 
-||| Example POST API handler, returns a list containing the new user.
-handler2 : HandlerType Api2
-handler2 params req = do
-  let uid = fromMaybe "" (lookup "id" params)
-  let user = { id := uid } req
-  pure [user]
+-- api : API
+Api2 = p3 :/ ep1
 
-||| Server instance
-||| Contains all available API routes
-public export
-server : Server
-server = MkServer [
-  Api1 :=> handler1,
-  Api2 :=> handler2
-  ]
+handler2 : GetHandlerType IO Api2
+handler2 name userId pass = pure $ MkUser userId name
+
+route2 : RouteItem IO
+route2 = (Api2 :=> handler2) 
+
+router : Router IO
+router = MkRouter [ route2 ]
 
 ||| Program main entry function
 ||| Creates server configuration and starts the HTTP server
@@ -71,7 +58,7 @@ covering
 main : IO ()
 main = do
   -- Create server config, set max connections to 1
-  let config = { maxConns := 1 } defaultConfig
+  let config = { maxConns := 1 , bind :=  IP4 [0,0,0,0] 2223 } defaultConfig
   putStrLn "Starting server on the http://localhost:\{show config.bind.port}"
   -- Run the server with the config and application
-  runServer config server
+  runRouter config router
