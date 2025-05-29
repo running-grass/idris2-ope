@@ -31,6 +31,7 @@ Prog = AsyncStream Poll
 ||| 
 ||| Accepts an asynchronous program and executes it in the epoll event loop
 ||| @ prog The server program to execute
+public export
 covering
 runServer' : Prog [Errno] Void -> IO ()
 runServer' prog = epollApp $ mpull (handle [stderrLn . interpolate] prog)

@@ -8,14 +8,21 @@ import JSON
 import public Pact.API.Endpoint
 import public Pact.API.Operator
 import public Pact.API.HasPathParam
+import Pact.WAI.Core
 import Pact.WAI.Request
+import Pact.WAI
 
 import JSON.Derive
 import Decidable.Equality
 import Data.Nat
+import FS.Core
+
+%default total
+%default covering
 
 %language ElabReflection
 %hide Pact.API.Core.API
+%hide Pact.API.Core.Route
 
 public export
 data Path : Type -> Vect n Type -> Type where
@@ -85,6 +92,105 @@ namespace API
 matchAPI : API ts -> Vect m String -> Either String (HVect ts)
 matchAPI (path :/ ep) segs = matchPath path segs
 
+|||
+||| @ts The types of the path parameters.
+||| @path The path.
+||| @epType The type of the endpoint.
+|||
+||| Returns the type of the path.
+public export
+GetPathType : Path _ ts -> (epType : Type) -> Type
+GetPathType (StaticPath _) epType = epType
+GetPathType (Capture _ t) epType = t -> epType
+GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathType restPath epType in case path of
+  Capture _ t => t -> epType'
+  _ => epType'
+
+public export
+GetHandlerType : (m : Type -> Type) -> API ts -> Type
+GetHandlerType m (path :/ ep) = GetPathType path $ (m (GetEpResultType ep))
+
+
+GetEPFromAPI : (m : Type -> Type) -> API tss -> Type
+GetEPFromAPI m (path :/ ep) = m (GetEpResultType ep)
+
+GetEpResultTypeFromAPI : API ts -> Type
+GetEpResultTypeFromAPI (path :/ ep) = GetEpResultType ep
+
+
+
+||| Route record type
+||| Associates an API definition with its handler function
+public export
+record RouteItem (m : Type -> Type) where
+  constructor (:=>)
+  { ts : Vect len Type}
+  ||| API definition, describes path and endpoint
+  api: API ts
+  ||| Handler function, type is determined by the API definition
+  handler : GetHandlerType m api
+  { toJSONProof : ToJSON (GetEpResultTypeFromAPI api) }
+
+
+GetEndpointTypeFromRouteItem : (m : Type -> Type) -> RouteItem m -> Type
+GetEndpointTypeFromRouteItem m (api :=> handler) = GetEPFromAPI m api
+
+||| Server data type
+||| Contains a set of route definitions for handling HTTP requests
+public export
+data Router: (m : Type -> Type) -> Type where
+  ||| Creates a server instance containing a list of routes
+  MkRouter : (routes : List (RouteItem m)) -> Router m
+
+
+matchRouteItem : {m : Type -> Type} -> RouteItem m -> Vect n String -> Bool
+matchRouteItem (api :=> handler) ss = case matchAPI api ss of
+  Right vals => True
+  Left err => False
+
+
+findRouteItem : {m : Type -> Type} -> List (RouteItem m) -> Vect n String -> Maybe (RouteItem m)
+findRouteItem [] _ = Nothing
+findRouteItem (item :: routes) segs = case matchRouteItem item segs of
+    True => Just item
+    False => findRouteItem routes segs
+
+strToVect : String -> (n ** Vect n String)
+strToVect s = (length list ** fromList list)
+  where
+  list : List String
+  list = filter (/= "") . forget . split (== '/') $ s 
+
+findOnRouter  : {m : Type -> Type} -> Router m -> String -> Maybe (RouteItem m)
+findOnRouter (MkRouter routes) s = case strToVect s of
+  (n ** segs) => findRouteItem routes segs
+
+
+applyHandler : (api : API tts) -> (params: HVect tts) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType m api) -> GetEPFromAPI m api
+applyHandler ((StaticPath _) :/ ep) [()] handler = handler
+applyHandler ((Capture _ t) :/ ep) [param] handler = handler param
+applyHandler (((StaticPath _) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :/ ep) params handler
+applyHandler (((Capture _ t) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :/ ep) params $ handler param
+
+applyHandlerWithRequest : {m : Type -> Type} -> (routeItem : RouteItem m) -> (req : Request) -> Maybe (GetEndpointTypeFromRouteItem m routeItem)
+applyHandlerWithRequest (api@(path :/ ep) :=> handler) req = 
+  let uri = req.uri
+      (_ ** segs) = strToVect uri
+      eParams = matchPath path segs
+  in case eParams of
+    (Right params) => Just $ applyHandler {m} (path :/ ep) params handler
+    _ => Nothing
+
+-- justResponse handler' params = liftIO (handler' params) >>= emit . JSONResponse
+
+public export
+processRequest : Router IO -> Request -> HTTPResponse
+processRequest router req = case findOnRouter router req.uri of
+  Just routeItem@((:=>) api@(path :/ ep) handler { toJSONProof }) => case applyHandlerWithRequest routeItem req of
+    Just ioRes => liftIO ioRes >>= emit . JSONResponse
+    Nothing => emit notFoundResponse
+  Nothing => emit notFoundResponse
+
 
 record UserId where
   constructor MkUserId
@@ -103,91 +209,6 @@ record User where
   name : String
 
 %runElab derive "User" [Show,Eq,ToJSON, FromJSON]
-
-|||
-||| @ts The types of the path parameters.
-||| @path The path.
-||| @epType The type of the endpoint.
-|||
-||| Returns the type of the path.
-public export
-GetPathType : Path _ ts -> (epType : Type) -> Type
-GetPathType (StaticPath _) epType = epType
-GetPathType (Capture _ t) epType = t -> epType
-GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathType restPath epType in case path of
-  Capture _ t => t -> epType'
-  _ => epType'
-
-public export
-GetHandlerType : API ts -> Type
-GetHandlerType (path :/ ep) = GetPathType path $ GetEndpointType ep
-
-
-
-
-||| Route record type
-||| Associates an API definition with its handler function
-public export
-record RouteItem where
-  constructor (:=>)
-  { ts : Vect len Type}
-  ||| API definition, describes path and endpoint
-  api: API ts
-  ||| Handler function, type is determined by the API definition
-  handler : GetHandlerType api
-
-
-||| Server data type
-||| Contains a set of route definitions for handling HTTP requests
-public export
-data Router: Type where
-  ||| Creates a server instance containing a list of routes
-  MkRouter : (routes : List RouteItem) -> Router
-
-
-matchRouteItem : RouteItem -> Vect m String -> Bool
-matchRouteItem (api :=> handler) ss = case matchAPI api ss of
-  Right vals => True
-  Left err => False
-
-
-findRouteItem : List RouteItem -> Vect m String -> Maybe RouteItem
-findRouteItem [] _ = Nothing
-findRouteItem (item :: routes) segs = case matchRouteItem item segs of
-    True => Just item
-    False => findRouteItem routes segs
-
-strToVect : String -> (n ** Vect n String)
-strToVect s = (length list ** fromList list)
-  where
-  list : List String
-  list = filter (/= "") . forget . split (== '/') $ s 
-
-findOnRouter  : Router -> String -> Maybe RouteItem
-findOnRouter (MkRouter routes) s = case strToVect s of
-  (n ** segs) => findRouteItem routes segs
-
-
-GetEPFromAPI : API tss -> Type
-GetEPFromAPI (path :/ ep) = GetEndpointType ep
-
-GetEndpointTypeFromRouteItem : RouteItem -> Type
-GetEndpointTypeFromRouteItem (api :=> handler) = GetEPFromAPI api
-
-applyHandler : (api : API tts) -> (params: HVect tts) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType api) -> GetEPFromAPI api
-applyHandler ((StaticPath _) :/ ep) [()] handler = handler
-applyHandler ((Capture _ t) :/ ep) [param] handler = handler param
-applyHandler (((StaticPath _) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler (path' :/ ep) params handler
-applyHandler (((Capture _ t) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler (path' :/ ep) params $ handler param
-
-applyHandlerWithRequest : (routeItem : RouteItem) -> (req : Request) -> Maybe (GetEndpointTypeFromRouteItem routeItem)
-applyHandlerWithRequest (api@(path :/ ep) :=> handler) req = 
-  let uri = req.uri
-      (_ ** segs) = strToVect uri
-      eParams = matchPath path segs
-  in case eParams of
-    (Right params) => Just $ applyHandler (path :/ ep) params handler
-    _ => Nothing
 
 
 vals : Vect 3 String
@@ -212,27 +233,30 @@ ep1 : Endpoint () User
 ep1 = Get User
 
 -- api : API
-api = p3 :/ ep1
+Api1 = p3 :/ ep1
 
 -- handleType = GetHandlerType api
 
 res = matchPath p3 vals
 
-H1 = GetHandlerType api
+H1 = GetHandlerType IO Api1
 
 
 
-r1 = matchAPI api vals
+r1 = matchAPI Api1 vals
 
-handler1 : H1
-handler1 name userId pass = pure $ MkUser userId name
 
-route1 = api :=> handler1
+handler1 : GetHandlerType IO Api1
+handler1 _ userId name = pure $ MkUser userId name
 
-router : Router
-router = MkRouter [api :=> handler1]
+route1 : RouteItem IO
+route1 = (Api1 :=> handler1) { toJSONProof = %search }
+
+public export
+router : Router IO
+router = MkRouter [route1]
 
 -- res : Maybe (HVect Tys)
 -- res = parsePathParams Tys valsa
 
-res1 = applyHandler api ["grass", MkUserId 2, "pass"] handler1
+-- res1 = applyHandler {m = IO} Api1 ["grass", MkUserId 2, "pass"] handler1

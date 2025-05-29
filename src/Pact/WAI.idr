@@ -5,6 +5,9 @@ import public Pact.WAI.Core
 import public Pact.WAI.Request
 import public Pact.WAI.Response
 
+import public FS.Core
+import public FS.Concurrent
+
 import FS.Posix
 import IO.Async.Loop.Posix
 

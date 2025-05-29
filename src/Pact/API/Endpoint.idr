@@ -65,16 +65,19 @@ public export
 EndpointResult : {resp : Type} -> Endpoint req resp -> Type
 EndpointResult _ = resp
 
+
 public export
-GetEndpointType : Endpoint req resp -> Type
-GetEndpointType HEAD = IO ()
-GetEndpointType CONNECT = IO ()
+GetEpResultType: Endpoint req resp -> Type
+GetEpResultType CONNECT = ()
+GetEpResultType HEAD = ()
+GetEpResultType (OPTIONS resType) = resType
+GetEpResultType (TRACE resType) = resType
+GetEpResultType (Get resType) = resType
+GetEpResultType (Post reqType resType) = resType
+GetEpResultType (Put reqType resType) = resType
+GetEpResultType (Delete reqType resType) = resType
+GetEpResultType (Patch reqType resType) = resType
 
-GetEndpointType (OPTIONS resType) = IO resType
-GetEndpointType (TRACE resType) = IO resType
-GetEndpointType (Get resType) = IO resType
-
-GetEndpointType (Post reqType resType) = IO resType
-GetEndpointType (Put reqType resType) = IO resType
-GetEndpointType (Delete reqType resType) = IO resType
-GetEndpointType (Patch reqType resType) = IO resType
+public export
+GetEndpointType : (m : Type -> Type) -> Endpoint req resp -> Type
+GetEndpointType m ep = m (GetEpResultType ep)

@@ -7,9 +7,11 @@ import Data.SortedMap
 import FS.Posix
 import FS.Socket
 
-import IO.Async.Loop.Posix
 import IO.Async.Loop.Epoll
+
 import public Data.ByteVect
+import public System.Posix.Errno.Type
+import public IO.Async.Loop.Posix
 
 %language ElabReflection
 

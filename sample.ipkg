@@ -7,7 +7,7 @@ depends =
   , contrib
   , records
 
-main = Sample.Main
+main = Sample.Main1
 
 executable = "pact-sample"
 sourcedir = "src"
