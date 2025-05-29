@@ -31,17 +31,29 @@ endpointToMethod (Delete reqType resType) = DELETE
 endpointToMethod (Patch reqType resType) = PATCH
 
 
-matchRouteItem : {m : Type -> Type} -> RouteItem m -> Vect n String -> Bool
-matchRouteItem (api :=> handler) ss = case matchAPI api ss of
+||| Match an API against a list of path segments.
+|||
+||| @api The API to match.
+||| @segs The list of path segments.
+|||
+||| Returns a list of the parsed path parameters.
+public export
+matchAPI : API ts -> Vect m String -> Request -> Either String (HVect ts)
+matchAPI (path :> ep) segs req = if req.method == endpointToMethod ep 
+                          then matchPath path segs 
+                          else Left "Method not allowed"
+
+matchRouteItem : {m : Type -> Type} -> RouteItem m -> Vect n String -> Request -> Bool
+matchRouteItem (api :=> handler) ss req = case matchAPI api ss req of
   Right vals => True
   Left err => False
 
 
-findRouteItem : {m : Type -> Type} -> List (RouteItem m) -> Vect n String -> Maybe (RouteItem m)
-findRouteItem [] _ = Nothing
-findRouteItem (item :: routes) segs = case matchRouteItem item segs of
+findRouteItem : {m : Type -> Type} -> List (RouteItem m) -> Vect n String -> Request -> Maybe (RouteItem m)
+findRouteItem [] _ req = Nothing
+findRouteItem (item :: routes) segs req = case matchRouteItem item segs req of
     True => Just item
-    False => findRouteItem routes segs
+    False => findRouteItem routes segs req
 
 strToVect : String -> (n ** Vect n String)
 strToVect s = (length list ** fromList list)
@@ -49,30 +61,29 @@ strToVect s = (length list ** fromList list)
   list : List String
   list = filter (/= "") . forget . split (== '/') $ s 
 
-findOnRouter  : {m : Type -> Type} -> Router m -> String -> Maybe (RouteItem m)
-findOnRouter (MkRouter routes) s = case strToVect s of
-  (n ** segs) => findRouteItem routes segs
-
+findOnRouter  : {m : Type -> Type} -> Router m -> Request -> Maybe (RouteItem m)
+findOnRouter (MkRouter routes) req = case strToVect req.uri of
+  (n ** segs) => findRouteItem routes segs req
 
 applyHandler : (api : API tts) -> (params: HVect tts) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType m api) -> GetEPFromAPI m api
-applyHandler ((StaticPath _) :/ ep) [()] handler = handler
-applyHandler ((Capture _ t) :/ ep) [param] handler = handler param
-applyHandler (((StaticPath _) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :/ ep) params handler
-applyHandler (((Capture _ t) :/ path') :/ ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :/ ep) params $ handler param
+applyHandler ((StaticPath _) :> ep) [()] handler = handler
+applyHandler ((Capture _ t) :> ep) [param] handler = handler param
+applyHandler (((StaticPath _) :/ path') :> ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params handler
+applyHandler (((Capture _ t) :/ path') :> ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params $ handler param
 
 applyHandlerWithRequest : {m : Type -> Type} -> (routeItem : RouteItem m) -> (req : Request) -> Maybe (GetEndpointTypeFromRouteItem m routeItem)
-applyHandlerWithRequest (api@(path :/ ep) :=> handler) req = 
+applyHandlerWithRequest (api@(path :> ep) :=> handler) req = 
   let uri = req.uri
       (_ ** segs) = strToVect uri
       eParams = matchPath path segs
   in case eParams of
-    (Right params) => Just $ applyHandler {m} (path :/ ep) params handler
+    (Right params) => Just $ applyHandler {m} (path :> ep) params handler
     _ => Nothing
 
 public export
 processRequest : Router IO -> Request -> HTTPResponse
-processRequest router req = case findOnRouter router req.uri of
-  Just routeItem@((:=>) api@(path :/ ep) handler { toJSONProof }) => case applyHandlerWithRequest routeItem req of
+processRequest router req = case findOnRouter router req of
+  Just routeItem@((:=>) api@(path :> ep) handler { toJSONProof }) => case applyHandlerWithRequest routeItem req of
     Just ioRes => liftIO ioRes >>= emit . JSONResponse
-    Nothing => emit notFoundResponse
-  Nothing => emit notFoundResponse
+    Nothing => throw InvalidRequest
+  Nothing => throw InvalidRequest

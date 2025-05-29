@@ -10,6 +10,7 @@ import public JSON.ToJSON
 ||| Unified handling of different response types
 public export
 data Response : Type where
+  NoContentResponse : Response
   ||| JSON response, directly uses a string to represent JSON
   JSONResponse : ToJSON a => a -> Response
   ||| Plain text response, requires value type to implement Show interface
@@ -32,5 +33,6 @@ badRequestResponse = PlainTextResponse "Bad Request"
 ||| @ resp The response object to render
 public export
 renderResponse : Response -> String
+renderResponse NoContentResponse = ""
 renderResponse (JSONResponse a) = encode a
 renderResponse (PlainTextResponse value) = show value

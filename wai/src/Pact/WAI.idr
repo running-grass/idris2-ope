@@ -25,3 +25,7 @@ HTTPApplication = Request -> HTTPResponse
 public export
 emptyResponse : HTTPResponse
 emptyResponse = emit $ PlainTextResponse "OK"
+
+public export
+noContentResponse : HTTPResponse
+noContentResponse = emit NoContentResponse

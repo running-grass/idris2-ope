@@ -13,12 +13,12 @@ import public JSON.FromJSON
 public export
 record RouteItem (m : Type -> Type) where
   constructor (:=>)
-  { ts : Vect len Type}
+  { paramsTypes : Vect paramsTypesLen Type}
   ||| API definition, describes path and endpoint
-  api: API ts
+  routeApi: API paramsTypes
   ||| Handler function, type is determined by the API definition
-  handler : GetHandlerType m api
-  { auto toJSONProof : ToJSON (GetEpResultTypeFromAPI api) }
+  routeHandler : GetHandlerType m routeApi
+  { auto toJSONProof : ToJSON (GetEpResultTypeFromAPI routeApi ) }
 
 
 public export

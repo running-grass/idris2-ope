@@ -10,7 +10,7 @@ Build a type-safe RESTful API framework
 
 ## Run Demo
 ```bash
-pack run sample
+make run-sample
 ```
 
 ## Acknowledgements

@@ -3,6 +3,7 @@ module Pact.API.Util
 import Data.Vect
 import Data.Vect.Quantifiers
 
+import Pact.API.Operator
 import Pact.API.HasPathParam
 import Pact.API.Core
 import Pact.API.Endpoint
@@ -30,16 +31,6 @@ matchPath (path :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case mV
   mVal = parsePathParams seg
 matchPath _ segs = Left ("unknown path" ++ show segs)
 
-||| Match an API against a list of path segments.
-|||
-||| @api The API to match.
-||| @segs The list of path segments.
-|||
-||| Returns a list of the parsed path parameters.
-public export
-matchAPI : API ts -> Vect m String -> Either String (HVect ts)
-matchAPI (path :/ ep) segs = matchPath path segs
-
 ||| Get the type of the path.
 ||| @ts The types of the path parameters.
 ||| @path The path.
@@ -63,7 +54,7 @@ GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathTy
 ||| Returns the type of the handler.
 public export
 GetHandlerType : (m : Type -> Type) -> API ts -> Type
-GetHandlerType m (path :/ ep) = GetPathType path $ (m (GetEpResultType ep))
+GetHandlerType m (path :> ep) = GetPathType path $ (m (GetEpResultType ep))
 
 ||| Get the type of the endpoint.
 ||| @m The type of the monad.
@@ -74,7 +65,7 @@ GetHandlerType m (path :/ ep) = GetPathType path $ (m (GetEpResultType ep))
 ||| Returns the type of the endpoint.
 public export
 GetEPFromAPI : (m : Type -> Type) -> API tss -> Type
-GetEPFromAPI m (path :/ ep) = m (GetEpResultType ep)
+GetEPFromAPI m (path :> ep) = m (GetEpResultType ep)
 
 ||| Get the type of the endpoint result.
 ||| @ts The types of the path parameters.
@@ -84,4 +75,4 @@ GetEPFromAPI m (path :/ ep) = m (GetEpResultType ep)
 ||| Returns the type of the endpoint result.
 public export
 GetEpResultTypeFromAPI : API ts -> Type
-GetEpResultTypeFromAPI (path :/ ep) = GetEpResultType ep
+GetEpResultTypeFromAPI (path :> ep) = GetEpResultType ep

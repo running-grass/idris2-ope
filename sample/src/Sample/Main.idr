@@ -25,32 +25,14 @@ record User where
 
 %runElab derive "User" [Show,Eq,ToJSON, FromJSON]
 
-p1 : Path () [()]
-p1 = StaticPath "users"
+api1 = (StaticPath "users" :/ Capture "id" UserId :/ Capture "name" String) :> Get User
 
-p2 : Path UserId [UserId]
-p2 = Capture "id" UserId
-
-p3 : Path String [String, UserId, String]
-p3 = Capture "users" String :/ p2 :/ Capture "name" String
-
-p4 : Path () [(), UserId, String]
-p4 = StaticPath "users" :/ p2 :/ Capture "name" String
-
-ep1 : Endpoint () User
-ep1 = Get User
-
--- api : API
-Api2 = p3 :/ ep1
-
-handler2 : GetHandlerType IO Api2
-handler2 name userId pass = pure $ MkUser userId name
-
-route2 : RouteItem IO
-route2 = (Api2 :=> handler2) 
+handler1 : UserId -> String -> IO User
+handler1 userId name = pure $ MkUser userId name
 
 router : Router IO
-router = MkRouter [ route2 ]
+router = MkRouter [ api1 :=> handler1 ]
+
 
 ||| Program main entry function
 ||| Creates server configuration and starts the HTTP server
@@ -58,7 +40,7 @@ covering
 main : IO ()
 main = do
   -- Create server config, set max connections to 1
-  let config = { maxConns := 1 , bind :=  IP4 [0,0,0,0] 2223 } defaultConfig
+  let config = { maxConns := 1 , bind :=  IP4 [0,0,0,0] 2222 } defaultConfig
   putStrLn "Starting server on the http://localhost:\{show config.bind.port}"
   -- Run the server with the config and application
   runRouter config router

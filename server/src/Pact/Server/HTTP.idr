@@ -125,6 +125,7 @@ public export
 getContentType : Response -> String
 getContentType (JSONResponse _) = "application/json"
 getContentType (PlainTextResponse _) = "text/plain"
+getContentType NoContentResponse = "text/plain"
 
 ||| encodeResponse' is a function that encodes an HTTP response
 ||| 
@@ -156,7 +157,7 @@ encodeResponse' status response =
 ||| @ return ByteString
 export
 badRequest : ByteString
-badRequest = encodeResponse' 400 (PlainTextResponse "Bad Request")
+badRequest = encodeResponse' 400 NoContentResponse
 
 ||| serve is a function that handles a single client connection
 ||| 

@@ -5,9 +5,8 @@ module Pact.API.Operator
 public export
 infixr 6 :/
 
--- Operator :-> is used to define a route with a handler function
 public export
-infixr 5 :->
+infixr 5 :>
 
 -- Operator :<|> is used to define a route with a handler function
 public export
