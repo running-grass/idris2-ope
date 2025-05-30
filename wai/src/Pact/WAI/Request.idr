@@ -3,41 +3,8 @@ module Pact.WAI.Request
 
 import Pact.WAI.Core
 import public Data.SortedMap
-
-import Derive.Prelude
-
-%language ElabReflection
-
-||| HTTP method enum
-||| Defines supported HTTP request methods
-public export
-data Method =
-  HEAD | CONNECT 
-  | OPTIONS | TRACE | GET
-  | POST | PUT | PATCH | DELETE
-
-%runElab derive "Method" [Show,Eq,Ord]
-
-
-||| Parse HTTP method string
-||| 
-||| Converts a string to a Method enum value
-||| @ s Method string (e.g. "GET", "POST", etc.)
-public export
-method : String -> Either HTTPErr Method
-method "HEAD" = Right HEAD
-method "CONNECT" = Right CONNECT
-
-method "OPTIONS" = Right OPTIONS
-method "TRACE" = Right TRACE
-method "GET" = Right GET
-
-method "POST" = Right POST
-method "PUT" = Right PUT
-method "PATCH" = Right PATCH
-method "DELETE" = Right DELETE
-method _ = Left InvalidRequest
-
+import Pact.WAI.Method
+import Pact.WAI.Version
 
 ||| RequestBody is the type of request body
 ||| It is a stream of bytes

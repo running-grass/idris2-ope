@@ -6,11 +6,14 @@ import JSON.Derive
 import Pact.WAI.Request
 import public Pact.API.Endpoint
 import public Pact.API.HasPathParam
+import public Pact.API.Operator
 
 %language ElabReflection
 
 %default total
 
+public export
+infixr 5 :->
 
 ||| PathSegment represents a segment of an API path
 ||| It can be a static path segment or a captured path segment

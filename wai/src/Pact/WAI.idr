@@ -4,6 +4,9 @@ module Pact.WAI
 import public Pact.WAI.Core
 import public Pact.WAI.Request
 import public Pact.WAI.Response
+import public Pact.WAI.Method
+import public Pact.WAI.HTTPErr
+import public Pact.WAI.Version
 
 import public FS.Core
 import public FS.Concurrent

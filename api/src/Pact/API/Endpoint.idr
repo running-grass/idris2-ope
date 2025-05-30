@@ -44,13 +44,6 @@ data Endpoint : Type -> Type -> Type where
   ||| For example: Patch User String, Patch User (List Product)
   Patch : (req : Type) -> (resp : Type) -> Endpoint req resp
 
-||| EndpointResult is a type function that computes the response type of an endpoint
-||| It extracts the response type information from the Endpoint type
-public export
-EndpointResult : {resp : Type} -> Endpoint req resp -> Type
-EndpointResult _ = resp
-
-
 public export
 GetEpResultType: Endpoint req resp -> Type
 GetEpResultType CONNECT = ()

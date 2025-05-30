@@ -19,7 +19,14 @@ authors = "running-grass"
   , json
 
 -- modules to install
-modules = Pact.WAI, Pact.WAI.Core, Pact.WAI.Request, Pact.WAI.Response
+modules = Pact.WAI, 
+          Pact.WAI.Core, 
+          Pact.WAI.Request, 
+          Pact.WAI.Response,
+          Pact.WAI.Method,
+          Pact.WAI.HTTPErr,
+          Pact.WAI.Version,
+          Pact.WAI.StatusCode
 
 -- main file (i.e. file to load at REPL)
 -- main =

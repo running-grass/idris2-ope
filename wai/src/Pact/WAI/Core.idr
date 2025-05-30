@@ -12,31 +12,12 @@ import IO.Async.Loop.Epoll
 import public Data.ByteVect
 import public System.Posix.Errno.Type
 import public IO.Async.Loop.Posix
+import Pact.WAI.HTTPErr
 
 %default total
 %default covering
 
 %language ElabReflection
-
-||| HTTP error type
-||| Represents possible errors during HTTP processing
-public export
-data HTTPErr : Type where
-  ||| Header size exceeded
-  HeaderSizeExceeded  : HTTPErr
-  ||| Content size exceeded
-  ContentSizeExceeded : HTTPErr
-  ||| Invalid HTTP request format
-  InvalidRequest      : HTTPErr
-
-%runElab derive "HTTPErr" [Show,Eq,Ord]
-
-||| String interpolation implementation for HTTPErr
-export
-Interpolation HTTPErr where
-  interpolate HeaderSizeExceeded  = "header size exceeded"
-  interpolate ContentSizeExceeded = "content size exceeded"
-  interpolate InvalidRequest      = "invalid HTTP request"
 
 ||| HTTP pull stream type
 ||| Represents an asynchronous stream from which HTTP data can be pulled
@@ -65,26 +46,6 @@ Headers = SortedMap String String
 public export
 0 QueryParams : Type
 QueryParams = SortedMap String String
-
-||| HTTP version enum
-||| Defines supported HTTP protocol versions
-public export
-data Version = V10 | V11 | V20
-
-%runElab derive "Version" [Show,Eq,Ord]
-
-
-||| Parse HTTP version string
-||| 
-||| Convert string to Version enum value
-||| @ s Version string (e.g. "HTTP/1.0", "HTTP/1.1", etc.)
-public export
-version : String -> Either HTTPErr Version
-version "HTTP/1.0" = Right V10
-version "HTTP/1.1" = Right V11
-version "HTTP/2.0" = Right V20
-version _          = Left InvalidRequest
-
 ||| Content type enum
 ||| Similar to Servant's JSON/PlainText content types
 public export
