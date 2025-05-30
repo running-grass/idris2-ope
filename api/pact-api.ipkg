@@ -22,7 +22,6 @@ modules = Pact.API.Operator,
           Pact.API.MimeRender,
           Pact.API.Accept,
           Pact.API.Core,
-          Pact.API.Endpoint, 
           Pact.API.HasPathParam,
           Pact.API.Util
 

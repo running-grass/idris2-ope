@@ -4,7 +4,6 @@ import Pact.API
 
 import Data.Vect
 import FS.Socket
-import JSON.ToJSON
 
 ||| Route record type
 ||| Associates an API definition with its handler function
@@ -16,7 +15,7 @@ record RouteItem (m : Type -> Type) where
   routeApi: API paramsTypes
   ||| Handler function, type is determined by the API definition
   routeHandler : GetHandlerType m routeApi
-  { auto toJSONProof : ToJSON (GetEpResultTypeFromAPI routeApi ) }
+  { auto mimeRenderProof : MimeRender (VerbAccept routeApi.verb) (VerbResponse routeApi.verb) }
 
 
 public export

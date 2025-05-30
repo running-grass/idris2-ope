@@ -12,7 +12,7 @@ depends =
 
 main = Sample.Main
 
-modules = Sample.Main, Sample.Old, Sample.SqaDemo
+modules = Sample.Main
 
 
 executable = "pact-sample"

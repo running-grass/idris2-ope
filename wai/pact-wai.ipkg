@@ -24,6 +24,7 @@ modules = Pact.WAI,
           Pact.WAI.Request, 
           Pact.WAI.Response,
           Pact.WAI.Method,
+          Pact.WAI.Header,
           Pact.WAI.HTTPErr,
           Pact.WAI.Version,
           Pact.WAI.StatusCode

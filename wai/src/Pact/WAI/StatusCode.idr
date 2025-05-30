@@ -22,6 +22,35 @@ record StatusCode where
 
 %runElab derive "StatusCode" [Show,Eq,Ord]
 
+public export
+implementation Interpolation StatusCode where
+  interpolate (MkStatusCode code) = show code
+
+public export
+ok : StatusCode
+ok = MkStatusCode 200
+
+public export
+badRequest : StatusCode
+badRequest = MkStatusCode 400
+
+public export
+unauthorized : StatusCode
+unauthorized = MkStatusCode 401
+
+public export
+forbidden : StatusCode
+forbidden = MkStatusCode 403
+
+public export
+notFound : StatusCode
+notFound = MkStatusCode 404
+
+public export
+internalServerError : StatusCode
+internalServerError = MkStatusCode 500
+
+
 ||| 100 - Continue
 public export
 code_100 : StatusCode

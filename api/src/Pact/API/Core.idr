@@ -17,17 +17,12 @@ data Path : Type -> Vect n Type -> Type where
   (:/) : Path tl [tl] -> Path tr tsr -> Path tl (tl :: tsr)
 
 
--- public export
--- data API : ( ts: Vect n Type) -> Type where
---   (:>) : (FromJSON req, ToJSON resp) 
---      => (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API ts
-
 public export
-record API (ts: Vect n Type) where
+record API (types: Vect n Type) where
   constructor (:>)
-  path : Path t ts
+  path : Path lastType types
   verb : Verb
-  { auto prf : All HasPathParam ts }
+  { auto prf : All HasPathParam types }
 
 ||| Get the name of a capture path segment
 ||| @ path The path to get the name of

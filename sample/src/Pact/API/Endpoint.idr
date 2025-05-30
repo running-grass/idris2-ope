@@ -45,17 +45,17 @@ data Endpoint : Type -> Type -> Type where
   Patch : (req : Type) -> (resp : Type) -> Endpoint req resp
 
 public export
-GetEpResultType: Endpoint req resp -> Type
-GetEpResultType CONNECT = ()
-GetEpResultType HEAD = ()
-GetEpResultType (OPTIONS resType) = resType
-GetEpResultType (TRACE resType) = resType
-GetEpResultType (Get resType) = resType
-GetEpResultType (Post reqType resType) = resType
-GetEpResultType (Put reqType resType) = resType
-GetEpResultType (Delete reqType resType) = resType
-GetEpResultType (Patch reqType resType) = resType
+VerbResponse: Endpoint req resp -> Type
+VerbResponse CONNECT = ()
+VerbResponse HEAD = ()
+VerbResponse (OPTIONS resType) = resType
+VerbResponse (TRACE resType) = resType
+VerbResponse (Get resType) = resType
+VerbResponse (Post reqType resType) = resType
+VerbResponse (Put reqType resType) = resType
+VerbResponse (Delete reqType resType) = resType
+VerbResponse (Patch reqType resType) = resType
 
 public export
 GetEndpointType : (m : Type -> Type) -> Endpoint req resp -> Type
-GetEndpointType m ep = m (GetEpResultType ep)
+GetEndpointType m ep = m (VerbResponse ep)

@@ -117,16 +117,6 @@ request req =
   |> lines
   |> assemble
 
-
-||| getContentType is a function that returns the content type of a response
-||| @ response Response
-||| @ return String
-public export
-getContentType : Response -> String
-getContentType (JSONResponse _) = "application/json"
-getContentType (PlainTextResponse _) = "text/plain"
-getContentType NoContentResponse = "text/plain"
-
 ||| encodeResponse' is a function that encodes an HTTP response
 ||| 
 ||| Generates an HTTP response ByteString with status code and body
@@ -136,28 +126,14 @@ export
 encodeResponse' : (status : Nat) -> Response -> ByteString
 encodeResponse' status response =
   fromString $
-    statusStr ++
-    contentLengthStr ++
-    contentTypeStr ++
-    "\r\n" ++
-    body
-  where
-    body : String
-    body = renderResponse response
-
-    contentTypeStr : String
-    contentTypeStr = "Content-Type: \{getContentType response}\r\n"
-    statusStr : String
-    statusStr = "HTTP/1.1 \{show status}\r\n"
-    contentLengthStr : String
-    contentLengthStr = "Content-Length: \{show (length body)}\r\n"
+    renderResponse response
 
 
 ||| Generate 400 Bad Request response
 ||| @ return ByteString
 export
-badRequest : ByteString
-badRequest = encodeResponse' 400 NoContentResponse
+badRequestHTTP : ByteString
+badRequestHTTP = fromString $ renderResponse badRequestResponse
 
 ||| serve is a function that handles a single client connection
 ||| 
@@ -180,7 +156,7 @@ serve app cli =
     handleRequest' : HTTPPull ByteString (Maybe Request) -> AsyncStream Poll [Errno] Void
     handleRequest' p =
       extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
-        Left _   => emit badRequest |> writeTo cli
+        Left _   => emit badRequestHTTP |> writeTo cli
         Right () => pure ()
 
 

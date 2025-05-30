@@ -1,6 +1,7 @@
 ||| Accept a content type
 module Pact.API.Accept
 
+import public Data.Mime.Apache.Model
 import Data.Mime.Apache
 
 ||| Plain text content type
@@ -27,25 +28,25 @@ data OctetStreamAccept : Type where
 public export
 interface Accept ctype where
   ||| Get the content type.
-  contentType : ctype -> Mime
+  contentType : Mime
 
 --- Implementations
 public export
 implementation Accept PlainTextAccept where
-  contentType _ = TEXT_PLAIN
+  contentType  = TEXT_PLAIN
 
 public export
 implementation Accept JSONAccept where
-  contentType _ = APPLICATION_JSON 
+  contentType  = APPLICATION_JSON 
 
 public export
 implementation Accept FormUrlEncodedAccept where
-  contentType _ = APPLICATION_X_WWW_FORM_URLENCODED
+  contentType  = APPLICATION_X_WWW_FORM_URLENCODED
 
 public export
 implementation Accept OctetStreamAccept where
-  contentType _ = APPLICATION_OCTET_STREAM
+  contentType  = APPLICATION_OCTET_STREAM
 
 public export
 implementation Accept XMLAccept where
-  contentType _ = APPLICATION_XML
+  contentType  = APPLICATION_XML

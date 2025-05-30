@@ -2,6 +2,7 @@
 module Pact.WAI
 
 import public Pact.WAI.Core
+import public Pact.WAI.Header
 import public Pact.WAI.Request
 import public Pact.WAI.Response
 import public Pact.WAI.Method
@@ -23,12 +24,3 @@ HTTPResponse = HTTPStream Response
 public export
 0 HTTPApplication : Type
 HTTPApplication = Request -> HTTPResponse
-
-||| Default empty response, usually used for testing or as a placeholder for unimplemented endpoints.
-public export
-emptyResponse : HTTPResponse
-emptyResponse = emit $ PlainTextResponse "OK"
-
-public export
-noContentResponse : HTTPResponse
-noContentResponse = emit NoContentResponse

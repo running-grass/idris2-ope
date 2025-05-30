@@ -18,20 +18,12 @@ record Verb where
   response : Type
 
 public export
+VerbAccept: Verb -> Type
+VerbAccept (MkVerb _ _ accept _) = accept
+
+public export
 VerbResponse: Verb -> Type
 VerbResponse (MkVerb _ _ _ response) = response
-
-public export
-GetEpResultType: Verb -> Type
-GetEpResultType (MkVerb _ _ _ response) = response
-
-public export
-GetVerbType : (m : Type -> Type) -> Verb -> Type
-GetVerbType m (MkVerb _ _ _ response) = m response
-
-public export
-GetEndpointType : (m : Type -> Type) -> Verb -> Type
-GetEndpointType m (MkVerb _ _ _ response) = m response
 
 --- 200 ---
 

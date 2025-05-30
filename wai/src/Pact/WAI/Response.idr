@@ -2,35 +2,50 @@
 module Pact.WAI.Response
 
 import Pact.WAI.Core
-import JSON.ToJSON
+import Pact.WAI.Header
+import Pact.WAI.StatusCode
+import Data.String
+import Data.SortedMap as Map
 
-||| Response data type
-||| Unified handling of different response types
 public export
-data Response : Type where
-  NoContentResponse : Response
-  ||| JSON response, directly uses a string to represent JSON
-  JSONResponse : ToJSON a => a -> Response
-  ||| Plain text response, requires value type to implement Show interface
-  PlainTextResponse : Show a => a -> Response
+record Response where
+  constructor MkResponse
+  status : StatusCode
+  headers : Headers
+  body : Maybe String
 
 ||| 404 Not Found response
 ||| Returned when the requested path cannot be matched to any route
 public export
 notFoundResponse : Response
-notFoundResponse = PlainTextResponse "Not Found"
+notFoundResponse = MkResponse notFound emptyHeaders Nothing
 
 ||| 400 Bad Request response
 ||| Returned when the request is invalid
 public export
 badRequestResponse : Response
-badRequestResponse = PlainTextResponse "Bad Request"
+badRequestResponse = MkResponse badRequest emptyHeaders Nothing
+
+||| Render headers to a string
+||| @ headers The headers to render
+public export
+renderHeaders : Headers -> String
+renderHeaders headers = 
+  let headersList = Map.toList headers
+  in Data.String.joinBy "\r\n" . map (\(k, v) => "\{k}: \{v}" ) $ headersList
 
 ||| Response rendering function
 ||| Converts a Response to a string for HTTP response
 ||| @ resp The response object to render
 public export
 renderResponse : Response -> String
-renderResponse NoContentResponse = ""
-renderResponse (JSONResponse a) = encode a
-renderResponse (PlainTextResponse value) = show value
+renderResponse (MkResponse status headers body) = 
+  let statusLine = "HTTP/1.1 \{status}\r\n"
+      bodyStr = maybe "" id body
+  in statusLine ++ renderHeaders headers ++ "\r\n\r\n" ++ bodyStr
+  
+
+testResponse : Response
+testResponse = MkResponse ok (fromList [("Content-Type", "text/plain"), ("Content-Length", "12")]) (Just "Hello, World!")
+
+test = renderResponse testResponse

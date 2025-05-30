@@ -5,6 +5,7 @@ import Pact.WAI.Core
 import public Data.SortedMap
 import Pact.WAI.Method
 import Pact.WAI.Version
+import Pact.WAI.Header
 
 ||| RequestBody is the type of request body
 ||| It is a stream of bytes

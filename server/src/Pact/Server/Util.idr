@@ -66,10 +66,23 @@ applyHandlerWithRequest (api@(path :> ep) :=> handler) req =
     (Right params) => Just $ applyHandler {m} (path :> ep) params handler
     _ => Nothing
 
+
+emitResponse : (v: Verb) -> MimeRender (VerbAccept v) (VerbResponse v) => VerbResponse v -> HTTPResponse
+emitResponse (MkVerb _ code accept' response') res = emit $ MkResponse code headers (Just bodyStr)
+  where
+  bodyStr : String
+  bodyStr = mimeRender { ctype = accept' } res
+  bodyLen : String
+  bodyLen =  show $ length bodyStr
+  contentTypeStr : String
+  contentTypeStr = show $ contentType { ctype = accept' }
+  headers : Headers
+  headers = if code == code_204 then emptyHeaders else fromList [("Content-Type", contentTypeStr ), ("Content-Length", bodyLen)]
+
 public export
 processRequest : Router IO -> Request -> HTTPResponse
 processRequest router req = case findOnRouter router req of
-  Just routeItem@((:=>) api@(path :> ep) handler { toJSONProof }) => case applyHandlerWithRequest routeItem req of
-    Just ioRes => liftIO ioRes >>= emit . JSONResponse
+  Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof }) => case applyHandlerWithRequest routeItem req of
+    Just ioRes => liftIO ioRes >>= emitResponse verb
     Nothing => throw InvalidRequest
   Nothing => throw InvalidRequest

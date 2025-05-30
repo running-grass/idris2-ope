@@ -54,7 +54,7 @@ GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathTy
 ||| Returns the type of the handler.
 public export
 GetHandlerType : (m : Type -> Type) -> API ts -> Type
-GetHandlerType m (path :> ep) = GetPathType path $ (m (GetEpResultType ep))
+GetHandlerType m (path :> ep) = GetPathType path $ (m (VerbResponse ep))
 
 ||| Get the type of the endpoint.
 ||| @m The type of the monad.
@@ -65,7 +65,7 @@ GetHandlerType m (path :> ep) = GetPathType path $ (m (GetEpResultType ep))
 ||| Returns the type of the endpoint.
 public export
 GetEPFromAPI : (m : Type -> Type) -> API tss -> Type
-GetEPFromAPI m (path :> ep) = m (GetEpResultType ep)
+GetEPFromAPI m (path :> ep) = m (VerbResponse ep)
 
 ||| Get the type of the endpoint result.
 ||| @ts The types of the path parameters.
@@ -75,4 +75,4 @@ GetEPFromAPI m (path :> ep) = m (GetEpResultType ep)
 ||| Returns the type of the endpoint result.
 public export
 GetEpResultTypeFromAPI : API ts -> Type
-GetEpResultTypeFromAPI (path :> ep) = GetEpResultType ep
+GetEpResultTypeFromAPI (path :> ep) = VerbResponse ep
