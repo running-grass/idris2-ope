@@ -25,7 +25,7 @@ record User where
 
 %runElab derive "User" [Show,Eq,ToJSON, FromJSON]
 
-api1 = (StaticPath "users" :/ Capture "id" UserId :/ Capture "name" String) :> Get User
+api1 = (StaticPath "users" :/ Capture "id" UserId :/ Capture "name" String) :> Get JSONAccept User
 
 handler1 : UserId -> String -> IO User
 handler1 userId name = pure $ MkUser userId name

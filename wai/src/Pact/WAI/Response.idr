@@ -2,9 +2,7 @@
 module Pact.WAI.Response
 
 import Pact.WAI.Core
-
-import public JSON.FromJSON
-import public JSON.ToJSON
+import JSON.ToJSON
 
 ||| Response data type
 ||| Unified handling of different response types

@@ -14,23 +14,23 @@ interface Accept ctype => MimeRender ctype a where
 --- Implementations
 
 public export
-implementation MimeRender PlainText String where
+implementation MimeRender PlainTextAccept String where
   mimeRender = id
 
 public export
-implementation ToJSON a => MimeRender JSON a where
+implementation ToJSON a => MimeRender JSONAccept a where
   mimeRender = encode
 
 public export
-implementation MimeRender FormUrlEncoded a where
+implementation MimeRender FormUrlEncodedAccept a where
   mimeRender = ?formUrlEncodedRender
 
 public export
-implementation MimeRender OctetStream a where
+implementation MimeRender OctetStreamAccept a where
   mimeRender = ?octetStreamRender
 
 public export
-implementation MimeRender XML a where
+implementation MimeRender XMLAccept a where
   mimeRender = ?xmlRender
 
 ||| Mime unrender a value from a string.
@@ -42,23 +42,23 @@ interface Accept ctype => MimeUnrender ctype a where
 --- Implementations
 
 public export
-implementation MimeUnrender PlainText String where
+implementation MimeUnrender PlainTextAccept String where
   mimeUnrender = Right
 
 
 public export
-implementation FromJSON a => MimeUnrender JSON a where
+implementation FromJSON a => MimeUnrender JSONAccept a where
   mimeUnrender = either (Left . show) Right . decode
 
 public export
-implementation MimeUnrender FormUrlEncoded a where
+implementation MimeUnrender FormUrlEncodedAccept a where
   mimeUnrender = ?formUrlEncodedUnrender
 
 public export
-implementation MimeUnrender OctetStream a where
+implementation MimeUnrender OctetStreamAccept a where
   mimeUnrender = ?octetStreamUnrender
 
 public export
-implementation MimeUnrender XML a where
+implementation MimeUnrender XMLAccept a where
   mimeUnrender = ?xmlUnrender
 

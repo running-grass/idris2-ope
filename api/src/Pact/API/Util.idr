@@ -6,7 +6,7 @@ import Data.Vect.Quantifiers
 import Pact.API.Operator
 import Pact.API.HasPathParam
 import Pact.API.Core
-import Pact.API.Endpoint
+import Pact.API.Verb
 
 ||| Match a path against a list of path segments.
 |||

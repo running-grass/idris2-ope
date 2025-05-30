@@ -47,14 +47,14 @@ public export
 0 QueryParams : Type
 QueryParams = SortedMap String String
 ||| Content type enum
-||| Similar to Servant's JSON/PlainText content types
+||| Similar to Servant's JSON/PlainTextAccept content types
 public export
-data ContentType = JSON | PlainText
+data ContentType = JSON | PlainTextAccept
 
 ||| Parse content type string
 ||| @ s Content type string (e.g. "application/json", "text/plain", etc.)
 public export
 parseContentType : String -> Either HTTPErr ContentType
 parseContentType "application/json" = Right JSON
-parseContentType "text/plain"      = Right PlainText
+parseContentType "text/plain"      = Right PlainTextAccept
 parseContentType _                 = Left InvalidRequest

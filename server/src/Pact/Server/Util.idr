@@ -17,20 +17,6 @@ import Pact.Server.Core
 %default covering
 
 
-||| Convert an Endpoint to a Method
-public export
-endpointToMethod : Endpoint req resp -> Method
-endpointToMethod HEAD = HEAD
-endpointToMethod CONNECT = CONNECT
-endpointToMethod (OPTIONS resType) = OPTIONS
-endpointToMethod (TRACE resType) = TRACE
-endpointToMethod (Get resType) = GET
-endpointToMethod (Post reqType resType) = POST
-endpointToMethod (Put reqType resType) = PUT
-endpointToMethod (Delete reqType resType) = DELETE
-endpointToMethod (Patch reqType resType) = PATCH
-
-
 ||| Match an API against a list of path segments.
 |||
 ||| @api The API to match.
@@ -39,7 +25,7 @@ endpointToMethod (Patch reqType resType) = PATCH
 ||| Returns a list of the parsed path parameters.
 public export
 matchAPI : API ts -> Vect m String -> Request -> Either String (HVect ts)
-matchAPI (path :> ep) segs req = if req.method == endpointToMethod ep 
+matchAPI (path :> ep) segs req = if req.method == ep.method 
                           then matchPath path segs 
                           else Left "Method not allowed"
 

@@ -25,6 +25,20 @@ import JSON.FromJSON
 
 import Data.Vect
 
+
+||| Convert an Endpoint to a Method
+public export
+endpointToMethod : Endpoint req resp -> Method
+endpointToMethod HEAD = HEAD
+endpointToMethod CONNECT = CONNECT
+endpointToMethod (OPTIONS resType) = OPTIONS
+endpointToMethod (TRACE resType) = TRACE
+endpointToMethod (Get resType) = GET
+endpointToMethod (Post reqType resType) = POST
+endpointToMethod (Put reqType resType) = PUT
+endpointToMethod (Delete reqType resType) = DELETE
+endpointToMethod (Patch reqType resType) = PATCH
+
 ||| fillDefault is a function that fills a default value if the Maybe is Nothing
 ||| @ def Default value
 ||| @ maybe Maybe value

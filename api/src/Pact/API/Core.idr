@@ -3,10 +3,7 @@ module Pact.API.Core
 import Pact.API.Operator
 import Data.Vect
 import Pact.API.HasPathParam
-import Pact.API.Endpoint
-
-import public JSON.FromJSON
-import public JSON.ToJSON
+import Pact.API.Verb
 
 import Data.Vect.Quantifiers
 
@@ -20,11 +17,17 @@ data Path : Type -> Vect n Type -> Type where
   (:/) : Path tl [tl] -> Path tr tsr -> Path tl (tl :: tsr)
 
 
-public export
-data API : ( ts: Vect n Type) -> Type where
-  (:>) : (FromJSON req, ToJSON resp) 
-     => (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API ts
+-- public export
+-- data API : ( ts: Vect n Type) -> Type where
+--   (:>) : (FromJSON req, ToJSON resp) 
+--      => (Path t ts) -> { auto prf : All HasPathParam ts } -> Endpoint req resp -> API ts
 
+public export
+record API (ts: Vect n Type) where
+  constructor (:>)
+  path : Path t ts
+  verb : Verb
+  { auto prf : All HasPathParam ts }
 
 ||| Get the name of a capture path segment
 ||| @ path The path to get the name of

@@ -4,9 +4,7 @@ import Pact.API
 
 import Data.Vect
 import FS.Socket
-
-import public JSON.ToJSON
-import public JSON.FromJSON
+import JSON.ToJSON
 
 ||| Route record type
 ||| Associates an API definition with its handler function
