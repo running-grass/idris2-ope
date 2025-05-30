@@ -17,8 +17,8 @@ public export
 record StatusCode where
   constructor MkStatusCode
   code : Nat
-  { auto gte100: 100 <= code = True }
-  { auto lte599: code <= 599 = True }
+  { auto 0 gte100: 100 <= code = True }
+  { auto 0 lte599: code <= 599 = True }
 
 %runElab derive "StatusCode" [Show,Eq,Ord]
 

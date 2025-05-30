@@ -13,11 +13,14 @@ authors = "running-grass"
 -- langversion
 
 -- packages to add to search path
-depends = json, pact-wai
+depends = json, pact-wai, apache-mime-types
 
 -- modules to install
 modules = Pact.API.Operator, 
           Pact.API, 
+          Pact.API.Verb,
+          Pact.API.MimeRender,
+          Pact.API.Accept,
           Pact.API.Core,
           Pact.API.Endpoint, 
           Pact.API.HasPathParam,
