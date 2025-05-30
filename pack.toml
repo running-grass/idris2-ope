@@ -16,7 +16,7 @@ path = "server"
 ipkg = "pact-server.ipkg"
 test = "test/test.ipkg"
 
-[custom.all.pact-sample]
+[custom.all.pact-todomvc]
 type = "local"
-path = "sample"
-ipkg = "pact-sample.ipkg"
+path = "todomvc"
+ipkg = "pact-todomvc.ipkg"

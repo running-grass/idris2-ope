@@ -6,19 +6,19 @@ build:
 	pack build pact-api && pack build pact-wai && pack build pact-server
 
 clean:
-	pack clean pact-api && pack clean pact-wai && pack clean pact-server && pack clean pact-sample
+	pack clean pact-api && pack clean pact-wai && pack clean pact-server && pack clean pact-todomvc
 
 check:
-	pack typecheck pact-sample
+	pack typecheck pact-todomvc
 
 run:
-	pack run pact-sample
+	pack run pact-todomvc
 
-build-sample:
-	pack build pact-sample
+build-todomvc:
+	pack build pact-todomvc
 
-run-sample: build-sample
-	./sample/build/exec/pact-sample
+run-todomvc: build-todomvc
+	./todomvc/build/exec/pact-todomvc
 
 watch:
 	find src | entr make check

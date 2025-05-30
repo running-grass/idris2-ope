@@ -10,7 +10,7 @@ Build a type-safe RESTful API framework
 
 ## Run Demo
 ```bash
-make run-sample
+make run-todomvc
 ```
 
 ## Acknowledgements

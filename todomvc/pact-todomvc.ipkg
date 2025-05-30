@@ -1,0 +1,21 @@
+package pact-todomvc
+version = 0.1.0
+authors = "running-grass"
+
+brief = "A TodoMVC Example built with Pact API"
+
+depends = 
+  streams-posix
+  , async-epoll
+  , json
+  , pact-api
+  , pact-wai
+  , pact-server
+
+main = TodoMVC.Main
+
+-- modules = TodoMVC.Main
+
+
+executable = "pact-todomvc"
+sourcedir = "src"
