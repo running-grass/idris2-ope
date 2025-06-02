@@ -8,6 +8,7 @@ import public Data.SortedMap
 import Data.ByteVect as BV
 import public FS.Posix
 import public FS.Socket
+import Debug.Trace
 
 import public IO.Async.Loop.Posix
 import public IO.Async.Loop.Epoll
@@ -123,17 +124,15 @@ request req =
 ||| @ status HTTP status code
 ||| @ body Response body content
 export
-encodeResponse' : (status : Nat) -> Response -> ByteString
-encodeResponse' status response =
-  fromString $
-    renderResponse response
+encodeResponse' : Response -> ByteString
+encodeResponse' res =  let bs = fromString . renderResponse $ traceVal res in bs
 
 
 ||| Generate 400 Bad Request response
 ||| @ return ByteString
 export
-badRequestHTTP : ByteString
-badRequestHTTP = fromString $ renderResponse badRequestResponse
+badRequestHTTP : String -> ByteString
+badRequestHTTP body = fromString $ renderResponse (badRequestResponse body)
 
 ||| serve is a function that handles a single client connection
 ||| 
@@ -144,22 +143,25 @@ covering
 serve : HTTPApplication -> Socket AF_INET -> Async Poll [] ()
 serve app cli =
   flip guarantee (close' cli) $
-    mpull $ handleErrors (\(Here x) => stderrLn "\{x}") $
+    mpull $ handleErrors (\(Here x) => trace "handleRequest' error" (stderrLn "\{x}")) $
          bytes cli 0xfff
       |> request
       |> handleRequest'
   where
     response : Maybe Request -> HTTPStream ByteString
     response Nothing  = pure ()
-    response (Just r) =  app r |> mapOutput (encodeResponse' 200)
+    response (Just r) = let s1 =  app r in trace "render response" mapOutput encodeResponse' (trace "get response" s1)
 
     handleRequest' : HTTPPull ByteString (Maybe Request) -> AsyncStream Poll [Errno] Void
     handleRequest' p =
       extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
-        Left _   => emit badRequestHTTP |> writeTo cli
-        Right () => pure ()
+        Left err => trace "handleRequest' badRequestHTTP" (emit (badRequestHTTP (show err)) |> writeTo cli)
+        Right () => trace "handleRequest' end" pure ()
 
-
+    -- handleRequest'' : HTTPPull ByteString (Maybe Request) -> HTTPPull ByteString (Maybe Response)
+    handleRequest'' p = onError (writeTo cli (p >>= response)) $ \errs => case errs of
+      _ => trace "handleRequest'' end" pure ()
+    
 ||| serverFunc is a function that creates and starts an HTTP server
 ||| 
 ||| Creates HTTP server according to the provided config and application

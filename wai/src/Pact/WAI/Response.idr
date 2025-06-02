@@ -7,12 +7,18 @@ import Pact.WAI.StatusCode
 import Data.String
 import Data.SortedMap as Map
 
+import Derive.Prelude
+
+%language ElabReflection
+
 public export
 record Response where
   constructor MkResponse
   status : StatusCode
   headers : Headers
   body : Maybe String
+
+%runElab derive "Response" [Show]
 
 ||| 404 Not Found response
 ||| Returned when the requested path cannot be matched to any route
@@ -23,8 +29,8 @@ notFoundResponse = MkResponse notFound emptyHeaders Nothing
 ||| 400 Bad Request response
 ||| Returned when the request is invalid
 public export
-badRequestResponse : Response
-badRequestResponse = MkResponse badRequest emptyHeaders Nothing
+badRequestResponse : String -> Response
+badRequestResponse body = MkResponse badRequest emptyHeaders (Just body)
 
 ||| Render headers to a string
 ||| @ headers The headers to render

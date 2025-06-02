@@ -3,7 +3,6 @@ module Pact.WAI.HTTPErr
 
 import Derive.Prelude
 
-
 %language ElabReflection
 
 
@@ -18,6 +17,8 @@ data HTTPErr : Type where
   ||| Invalid HTTP request format
   InvalidRequest      : HTTPErr
 
+  DebugErrText : String -> HTTPErr
+
 %runElab derive "HTTPErr" [Show,Eq,Ord]
 
 ||| String interpolation implementation for HTTPErr
@@ -26,3 +27,4 @@ Interpolation HTTPErr where
   interpolate HeaderSizeExceeded  = "header size exceeded"
   interpolate ContentSizeExceeded = "content size exceeded"
   interpolate InvalidRequest      = "invalid HTTP request"
+  interpolate (DebugErrText text) = text
