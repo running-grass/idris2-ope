@@ -21,18 +21,6 @@ public export
 implementation ToJSON a => MimeRender JSONAccept a where
   mimeRender = encode
 
-public export
-implementation MimeRender FormUrlEncodedAccept a where
-  mimeRender = ?formUrlEncodedRender
-
-public export
-implementation MimeRender OctetStreamAccept a where
-  mimeRender = ?octetStreamRender
-
-public export
-implementation MimeRender XMLAccept a where
-  mimeRender = ?xmlRender
-
 ||| Mime unrender a value from a string.
 public export
 interface Accept ctype => MimeUnrender ctype a where
@@ -49,16 +37,3 @@ implementation MimeUnrender PlainTextAccept String where
 public export
 implementation FromJSON a => MimeUnrender JSONAccept a where
   mimeUnrender = either (Left . show) Right . decode
-
-public export
-implementation MimeUnrender FormUrlEncodedAccept a where
-  mimeUnrender = ?formUrlEncodedUnrender
-
-public export
-implementation MimeUnrender OctetStreamAccept a where
-  mimeUnrender = ?octetStreamUnrender
-
-public export
-implementation MimeUnrender XMLAccept a where
-  mimeUnrender = ?xmlUnrender
-

@@ -6,7 +6,6 @@ import Data.Vect
 import Data.Vect.Quantifiers
 import Data.List1
 import JSON
-import Debug.Trace
 
 import Pact.WAI
 import Pact.API
@@ -104,7 +103,7 @@ processRequest router req = accumAsString req.body >>= hand
   where
   hand : String -> HTTPResponse
   hand reqBody = case findOnRouter router req of
-    Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } { reqBodyProof }) => case (trace "applyHandlerWithRequest" $ applyHandlerWithRequest routeItem req reqBody) of
-      Right ioRes => trace "applyHandlerWithRequest success" (liftIO ioRes >>= trace "emitResponse" emitResponse verb)
-      Left err => trace "applyHandlerWithRequest error" throw (DebugErrText err)
-    Nothing => trace "Route not found" throw (DebugErrText "Route not found")
+    Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } { reqBodyProof }) => case (applyHandlerWithRequest routeItem req reqBody) of
+      Right ioRes => liftIO ioRes >>= emitResponse verb
+      Left err => throw InvalidRequest
+    Nothing => throw InvalidRequest

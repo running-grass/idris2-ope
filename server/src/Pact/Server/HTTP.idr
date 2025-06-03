@@ -8,7 +8,6 @@ import public Data.SortedMap
 import Data.ByteVect as BV
 import public FS.Posix
 import public FS.Socket
-import Debug.Trace
 
 import public IO.Async.Loop.Posix
 import public IO.Async.Loop.Epoll
@@ -125,7 +124,7 @@ request req =
 ||| @ body Response body content
 export
 encodeResponse' : Response -> ByteString
-encodeResponse' res =  let bs = fromString . renderResponse $ traceVal res in bs
+encodeResponse' res =  let bs = fromString . renderResponse $ res in bs
 
 
 ||| Generate 400 Bad Request response
@@ -143,24 +142,24 @@ covering
 serve : HTTPApplication -> Socket AF_INET -> Async Poll [] ()
 serve app cli =
   flip guarantee (close' cli) $
-    mpull $ handleErrors (\(Here x) => trace "handleRequest' error" (stderrLn "\{x}")) $
+    mpull $ handleErrors (\(Here x) => stderrLn "\{x}") $
          bytes cli 0xfff
       |> request
       |> handleRequest'
   where
     response : Maybe Request -> HTTPStream ByteString
     response Nothing  = pure ()
-    response (Just r) = let s1 =  app r in trace "render response" mapOutput encodeResponse' (trace "get response" s1)
+    response (Just r) = let s1 =  app r in mapOutput encodeResponse' s1
 
     handleRequest' : HTTPPull ByteString (Maybe Request) -> AsyncStream Poll [Errno] Void
     handleRequest' p =
       extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
-        Left err => trace "handleRequest' badRequestHTTP" (emit (badRequestHTTP (show err)) |> writeTo cli)
-        Right () => trace "handleRequest' end" pure ()
+        Left err => emit (badRequestHTTP (show err)) |> writeTo cli
+        Right () => pure ()
 
     -- handleRequest'' : HTTPPull ByteString (Maybe Request) -> HTTPPull ByteString (Maybe Response)
     handleRequest'' p = onError (writeTo cli (p >>= response)) $ \errs => case errs of
-      _ => trace "handleRequest'' end" pure ()
+      _ => pure ()
     
 ||| serverFunc is a function that creates and starts an HTTP server
 ||| 
