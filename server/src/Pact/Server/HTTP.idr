@@ -123,17 +123,15 @@ request req =
 ||| @ status HTTP status code
 ||| @ body Response body content
 export
-encodeResponse' : (status : Nat) -> Response -> ByteString
-encodeResponse' status response =
-  fromString $
-    renderResponse response
+encodeResponse' : Response -> ByteString
+encodeResponse' res =  let bs = fromString . renderResponse $ res in bs
 
 
 ||| Generate 400 Bad Request response
 ||| @ return ByteString
 export
-badRequestHTTP : ByteString
-badRequestHTTP = fromString $ renderResponse badRequestResponse
+badRequestHTTP : String -> ByteString
+badRequestHTTP body = fromString $ renderResponse (badRequestResponse body)
 
 ||| serve is a function that handles a single client connection
 ||| 
@@ -151,15 +149,18 @@ serve app cli =
   where
     response : Maybe Request -> HTTPStream ByteString
     response Nothing  = pure ()
-    response (Just r) =  app r |> mapOutput (encodeResponse' 200)
+    response (Just r) = let s1 =  app r in mapOutput encodeResponse' s1
 
     handleRequest' : HTTPPull ByteString (Maybe Request) -> AsyncStream Poll [Errno] Void
     handleRequest' p =
       extractErr HTTPErr (writeTo cli (p >>= response)) >>= \case
-        Left _   => emit badRequestHTTP |> writeTo cli
+        Left err => emit (badRequestHTTP (show err)) |> writeTo cli
         Right () => pure ()
 
-
+    -- handleRequest'' : HTTPPull ByteString (Maybe Request) -> HTTPPull ByteString (Maybe Response)
+    handleRequest'' p = onError (writeTo cli (p >>= response)) $ \errs => case errs of
+      _ => pure ()
+    
 ||| serverFunc is a function that creates and starts an HTTP server
 ||| 
 ||| Creates HTTP server according to the provided config and application

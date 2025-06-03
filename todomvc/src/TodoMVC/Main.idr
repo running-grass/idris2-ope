@@ -57,6 +57,8 @@ handlerGetTodos = pure todos
 routeGetTodos : RouteItem IO
 routeGetTodos = ApiGetTodos :=> handlerGetTodos
 
+
+
 ApiGetTodo = StaticPath "todos" :/ Capture "id" TodoId :> Get JSONAccept Todo
 
 handlerGetTodo : GetHandlerType IO ApiGetTodo
@@ -65,9 +67,19 @@ handlerGetTodo id = pure $ MkTodo id "Todo \{id}" False
 routeGetTodo : RouteItem IO
 routeGetTodo = ApiGetTodo :=> handlerGetTodo
 
+ApiPostTodo = StaticPath "todos" :/ ReqBody Todo :> Post JSONAccept Todo
+
+handlerPostTodo : Todo -> IO Todo
+handlerPostTodo todo = do
+  putStrLn "Posting todo \{show todo}"
+  pure todo
+
+routePostTodo : RouteItem IO
+routePostTodo = ApiPostTodo :=> handlerPostTodo
+
 
 router : Router IO
-router = MkRouter [ routeGetTodos, routeGetTodo ]
+router = MkRouter [ routeGetTodos, routeGetTodo, routePostTodo ]
 
 
 ||| Program main entry function

@@ -16,16 +16,26 @@ import Pact.API.Verb
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchPath : Path t ts -> Vect m String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
+matchPath : Path t ts reqBody' -> Vect m String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
 matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
+matchPath (ReqBody s) [] = Right [()]
 matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parsePathParams seg  of
   Just val => Right [val]
   Nothing => Left ("Failed to parse path parameter:" ++ s)
+-- matchPath (ReqBody reqBody :/ restPath) segs { allprf = _ :: restPrf } = case matchPath restPath segs { allprf = restPrf } of
+--   Right vals => Right (() :: vals)
+--   Left err => Left err
 matchPath (path :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case mVal of
   Just val => case matchPath restPath segs of
     Right vals => Right (val :: vals)
     Left err => Left err
   Nothing => Left ("Failed to parse path parameter:" ++ getCaptureName path)
+
+-- case (path, mVal) of
+--  (_, (Just val)) => case matchPath restPath segs of
+--     Right vals => Right (val :: vals)
+--     Left err => Left err
+--   (_, Nothing) => Left ("Failed to parse path parameter:" ++ getCaptureName path)
   where
   mVal : Maybe t
   mVal = parsePathParams seg
@@ -38,11 +48,14 @@ matchPath _ segs = Left ("unknown path" ++ show segs)
 |||
 ||| Returns the type of the path.
 public export
-GetPathType : Path _ ts -> (epType : Type) -> Type
+GetPathType : Path _ ts reqBody' -> (epType : Type) -> Type
 GetPathType (StaticPath _) epType = epType
 GetPathType (Capture _ t) epType = t -> epType
+GetPathType (ReqBody reqBody) epType = reqBody -> epType
 GetPathType { ts = t :: ts'} (path :/ restPath) epType = let epType' = GetPathType restPath epType in case path of
-  Capture _ t => t -> epType'
+  StaticPath _ => epType'
+  Capture name t => t -> epType'
+  -- ReqBody reqBody => reqBody -> epType'
   _ => epType'
 
 ||| Get the type of the handler.

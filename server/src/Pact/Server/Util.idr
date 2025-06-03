@@ -11,7 +11,14 @@ import Pact.WAI
 import Pact.API
 
 import Pact.Server.Core
+import FS.Core
 
+import FS.Posix
+import FS.Socket
+
+import IO.Async.Loop.Posix
+import IO.Async.Loop.Epoll
+import FS.Concurrent
 
 %default total
 %default covering
@@ -51,23 +58,28 @@ findOnRouter  : {m : Type -> Type} -> Router m -> Request -> Maybe (RouteItem m)
 findOnRouter (MkRouter routes) req = case strToVect req.uri of
   (n ** segs) => findRouteItem routes segs req
 
-applyHandler : (api : API tts) -> (params: HVect tts) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType m api) -> GetEPFromAPI m api
-applyHandler ((StaticPath _) :> ep) [()] handler = handler
-applyHandler ((Capture _ t) :> ep) [param] handler = handler param
-applyHandler (((StaticPath _) :/ path') :> ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params handler
-applyHandler (((Capture _ t) :/ path') :> ep) (param :: params) { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params $ handler param
+applyHandler : (api : API tts) -> (params: HVect tts) -> Lazy (Either DecodingErr (ApiReqBody api)) -> { auto allprf: All HasPathParam tts} -> (handler: GetHandlerType m api) -> Either String (GetEPFromAPI m api)
+applyHandler ((StaticPath _) :> ep) [()] _ handler = Right handler
+applyHandler ((Capture _ t) :> ep) [param] _ handler = Right $ handler param
+applyHandler ((ReqBody reqType) :> ep) _ (Right reqBody) handler = Right $ handler reqBody
+applyHandler ((ReqBody reqType) :> ep) _ (Left err) handler = Left $ "parse error: \{show err}"
+applyHandler (((StaticPath _) :/ path') :> ep) (param :: params) reqBody { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody handler
+applyHandler (((Capture _ t) :/ path') :> ep) (param :: params) reqBody { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody $ handler param
+-- applyHandler (((ReqBody reqType) :/ path') :> ep) (_ :: params) reqBody@(Just reqBody')  { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody $ handler reqBody'
+applyHandler _ _ _ _ = Left "Invalid request"
 
-applyHandlerWithRequest : {m : Type -> Type} -> (routeItem : RouteItem m) -> (req : Request) -> Maybe (GetEndpointTypeFromRouteItem m routeItem)
-applyHandlerWithRequest (api@(path :> ep) :=> handler) req = 
+applyHandlerWithRequest : {m : Type -> Type} -> (routeItem : RouteItem m) -> (req : Request) -> String -> Either String (GetEndpointTypeFromRouteItem m routeItem)
+applyHandlerWithRequest ((:=>) api@(path :> ep) handler { mimeRenderProof } { reqBodyProof }) req reqBody = 
   let uri = req.uri
       (_ ** segs) = strToVect uri
       eParams = matchPath path segs
-  in case eParams of
-    (Right params) => Just $ applyHandler {m} (path :> ep) params handler
-    _ => Nothing
+      reqBody' : Either DecodingErr (PathReqBody path) = delay $ decode reqBody
+  in case (eParams) of
+    (Right params) => applyHandler {m} (path :> ep) params reqBody'  handler
+    (Left err) => Left $ "\{err}"
 
 
-emitResponse : (v: Verb) -> MimeRender (VerbAccept v) (VerbResponse v) => VerbResponse v -> HTTPResponse
+emitResponse : (v: Verb) -> MimeRender (VerbAccept v) (VerbResponse v)  =>  VerbResponse v -> HTTPResponse
 emitResponse (MkVerb _ code accept' response') res = emit $ MkResponse code headers (Just bodyStr)
   where
   bodyStr : String
@@ -79,10 +91,19 @@ emitResponse (MkVerb _ code accept' response') res = emit $ MkResponse code head
   headers : Headers
   headers = if code == code_204 then emptyHeaders else fromList [("Content-Type", contentTypeStr ), ("Content-Length", bodyLen)]
 
+
+accumAsString : Pull f ByteString es () -> Pull f q es String 
+accumAsString p =
+     foldGet (:<) [<] p
+  |> map (toString . ByteString.fastConcat . (<>> []))
+
 public export
 processRequest : Router IO -> Request -> HTTPResponse
-processRequest router req = case findOnRouter router req of
-  Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof }) => case applyHandlerWithRequest routeItem req of
-    Just ioRes => liftIO ioRes >>= emitResponse verb
+processRequest router req = accumAsString req.body >>= hand
+  where
+  hand : String -> HTTPResponse
+  hand reqBody = case findOnRouter router req of
+    Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } { reqBodyProof }) => case (applyHandlerWithRequest routeItem req reqBody) of
+      Right ioRes => liftIO ioRes >>= emitResponse verb
+      Left err => throw InvalidRequest
     Nothing => throw InvalidRequest
-  Nothing => throw InvalidRequest

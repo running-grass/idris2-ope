@@ -3,7 +3,6 @@ module Pact.WAI.HTTPErr
 
 import Derive.Prelude
 
-
 %language ElabReflection
 
 

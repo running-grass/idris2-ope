@@ -12,7 +12,7 @@ check:
 	pack typecheck pact-todomvc
 
 run:
-	pack run pact-todomvc
+	pack -v run pact-todomvc
 
 build-todomvc:
 	pack build pact-todomvc
