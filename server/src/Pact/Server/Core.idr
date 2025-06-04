@@ -1,11 +1,32 @@
 module Pact.Server.Core
 
 import Pact.API
+import Pact.WAI.HTTPErr
 
 import Data.Vect
 import FS.Socket
 import JSON.FromJSON
+import Control.Monad.Either
+import Control.Monad.Reader
 
+||| Handler is a type that represents a handler function
+public export
+Handler : Type -> Type
+Handler = EitherT HTTPErr IO
+
+-- 在 Core.idr 中添加
+public export
+interface Hoistable (m : Type -> Type) where
+  hoist : m a -> Handler a
+
+-- 基本实现
+public export
+implementation Hoistable IO where
+  hoist = liftIO
+
+public export
+implementation Hoistable Handler where
+  hoist = id
 
 ||| Route record type
 ||| Associates an API definition with its handler function
@@ -30,7 +51,7 @@ GetEndpointTypeFromRouteItem m (api :=> handler) = GetEPFromAPI m api
 public export
 data Router: (m : Type -> Type) -> Type where
   ||| Creates a server instance containing a list of routes
-  MkRouter : (routes : List (RouteItem m)) -> Router m
+  MkRouter : Hoistable m => (routes : List (RouteItem m)) -> Router m
 
 
 ||| ServerConfig is a record type that contains server configuration

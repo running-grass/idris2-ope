@@ -5,6 +5,10 @@ import Pact.Server
 import JSON.ToJSON
 
 import JSON.Derive
+import Control.Monad.Reader
+import Control.Monad.Either
+import Control.Monad.State
+import Control.Monad.Writer
 
 %language ElabReflection
 
@@ -49,38 +53,59 @@ todos = [
   ]
 
 
+AppM : Type -> Type
+AppM = WriterT (List String) Handler
+
+implementation Hoistable AppM where
+  hoist st = do 
+    let et = runWriterT st
+    (a, n) <- et
+    liftIO $ putStrLn "Hoisted \{show n}"
+    pure a
+
 ApiGetTodos = StaticPath "todos" :> Get JSONAccept (List Todo)
 
-handlerGetTodos : GetHandlerType IO ApiGetTodos
-handlerGetTodos = pure todos
+handlerGetTodos : AppM (List Todo)
+handlerGetTodos = do
+  tell ["Getting todos before"]
+  -- do something
+  tell ["Getting todos after"]
+  pure todos
 
-routeGetTodos : RouteItem IO
+routeGetTodos : RouteItem AppM
 routeGetTodos = ApiGetTodos :=> handlerGetTodos
-
-
 
 ApiGetTodo = StaticPath "todos" :/ Capture "id" TodoId :> Get JSONAccept Todo
 
-handlerGetTodo : GetHandlerType IO ApiGetTodo
+handlerGetTodo : GetHandlerType AppM ApiGetTodo
 handlerGetTodo id = pure $ MkTodo id "Todo \{id}" False
 
-routeGetTodo : RouteItem IO
+routeGetTodo : RouteItem AppM
 routeGetTodo = ApiGetTodo :=> handlerGetTodo
 
 ApiPostTodo = StaticPath "todos" :/ ReqBody Todo :> Post JSONAccept Todo
 
-handlerPostTodo : Todo -> IO Todo
+handlerPostTodo : Todo -> AppM Todo
 handlerPostTodo todo = do
-  putStrLn "Posting todo \{show todo}"
+  liftIO $ putStrLn "Posting todo \{show todo}"
   pure todo
 
-routePostTodo : RouteItem IO
+routePostTodo : RouteItem AppM
 routePostTodo = ApiPostTodo :=> handlerPostTodo
 
 
-router : Router IO
+router : Router AppM
 router = MkRouter [ routeGetTodos, routeGetTodo, routePostTodo ]
 
+
+-- app : State -> Application
+-- app s = serve api $ hoistServer api (nt s) server
+
+config : ServerConfig
+config = { maxConns := 1 , bind :=  IP4 [0,0,0,0] 2222 } defaultConfig
+
+app1 : HTTPApplication
+app1 = serve router
 
 ||| Program main entry function
 ||| Creates server configuration and starts the HTTP server
@@ -88,7 +113,5 @@ covering
 main : IO ()
 main = do
   -- Create server config, set max connections to 1
-  let config = { maxConns := 1 , bind :=  IP4 [0,0,0,0] 2222 } defaultConfig
   putStrLn "Starting server on the http://localhost:\{show config.bind.port}"
-  -- Run the server with the config and application
-  runRouter config router
+  run config app1
