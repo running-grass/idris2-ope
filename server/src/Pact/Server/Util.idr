@@ -20,6 +20,9 @@ import IO.Async.Loop.Posix
 import IO.Async.Loop.Epoll
 import FS.Concurrent
 
+import Control.Monad.Error.Either
+
+
 %default total
 %default covering
 
@@ -98,12 +101,14 @@ accumAsString p =
   |> map (toString . ByteString.fastConcat . (<>> []))
 
 public export
-processRequest : Router IO -> Request -> HTTPResponse
-processRequest router req = accumAsString req.body >>= hand
+serve : {m : Type -> Type} -> Hoistable m => Router m -> Request -> HTTPResponse
+serve router req = accumAsString req.body >>= hand
   where
   hand : String -> HTTPResponse
   hand reqBody = case findOnRouter router req of
     Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } { reqBodyProof }) => case (applyHandlerWithRequest routeItem req reqBody) of
-      Right ioRes => liftIO ioRes >>= emitResponse verb
+      Right ioRes => (liftIO . runEitherT . hoist {m} $ ioRes ) >>= \case 
+        Right res => emitResponse verb res
+        Left err => throw err
       Left err => throw InvalidRequest
     Nothing => throw InvalidRequest

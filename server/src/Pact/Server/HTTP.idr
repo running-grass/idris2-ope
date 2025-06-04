@@ -14,6 +14,7 @@ import public IO.Async.Loop.Epoll
 import public System
 
 import Derive.Prelude
+import Control.Monad.Reader
 
 import Pact.WAI
 import Pact.API
@@ -22,7 +23,6 @@ import Pact.API
 
 ||| Prog type is the core type for the server's asynchronous stream program
 ||| Based on Poll event loop and AsyncStream for asynchronous IO
-public export
 0 Prog : List Type -> Type -> Type
 Prog = AsyncStream Poll
 
@@ -30,7 +30,6 @@ Prog = AsyncStream Poll
 ||| 
 ||| Accepts an asynchronous program and executes it in the epoll event loop
 ||| @ prog The server program to execute
-public export
 covering
 runServer' : Prog [Errno] Void -> IO ()
 runServer' prog = epollApp $ mpull (handle [stderrLn . interpolate] prog)
@@ -91,7 +90,6 @@ contentType = lookup "content-type"
 ||| 
 ||| Assembles parsed HTTP components into a complete Request object
 ||| @ p Asynchronous pull stream of HTTP ByteStrings
-export
 assemble :
      HTTPPull (List ByteString) (HTTPStream ByteString)
   -> HTTPPull o (Maybe Request)
@@ -109,7 +107,6 @@ assemble p = Prelude.do
 ||| Parse HTTP request from HTTP byte stream
 ||| 
 ||| @ req HTTP byte stream
-export
 request : RequestBody -> HTTPPull o (Maybe Request)
 request req =
      breakAtSubstring pure "\r\n\r\n" req
@@ -139,8 +136,8 @@ badRequestHTTP body = fromString $ renderResponse (badRequestResponse body)
 ||| @ app Application handler function
 ||| @ cli Client socket
 covering
-serve : HTTPApplication -> Socket AF_INET -> Async Poll [] ()
-serve app cli =
+consumeSocket: HTTPApplication -> Socket AF_INET -> Async Poll [] ()
+consumeSocket app cli =
   flip guarantee (close' cli) $
     mpull $ handleErrors (\(Here x) => stderrLn "\{x}") $
          bytes cli 0xfff
@@ -168,23 +165,16 @@ serve app cli =
 ||| @ app Application handler function
 ||| @ return Prog [Errno] Void
 covering
-public export
 serverFunc : ServerConfig -> HTTPApplication -> Prog [Errno] Void
 serverFunc config app =
   let conn = acceptOn AF_INET SOCK_STREAM config.bind
-      serve' = serve app
+      serve' = consumeSocket app
   in
   case config.maxConns of
     S k => foreachPar (S k) serve' conn
     Z   => foreachPar 1 serve' conn
 
-||| runServer is a function that runs the HTTP server
-||| @ config Server configuration
-||| @ server Server instance
-||| @ return IO ()
 covering
 public export
-runRouter: ServerConfig -> Router IO -> IO ()
-runRouter config router = do
-  let app = processRequest router
-  runServer' $ serverFunc config app
+run: ServerConfig -> HTTPApplication -> IO ()
+run config app = runServer' $ serverFunc config app
