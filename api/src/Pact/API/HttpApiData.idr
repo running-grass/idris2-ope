@@ -1,16 +1,21 @@
+||| Parse and convert URL pieces and headers.
 module Pact.API.HttpApiData
 
 import Data.String
 import Data.Vect
 import Data.List1
 
+||| Parse a URL piece or header into a value.
 public export
 interface FromHttpApiData a where
+  ||| Parse a URL piece into a value.
   parseUrlPiece : String -> Either String a
 
+  ||| Parse a header into a value.
   parseHeader : String -> Either String a
   parseHeader = parseUrlPiece
 
+  ||| Parse a query parameter into a value.
   parseQueryParam : String -> Either String a
   parseQueryParam = parseUrlPiece
 
@@ -139,13 +144,18 @@ implementation FromHttpApiData a => FromHttpApiData (n ** Vect n a) where
     "" => Right (0 ** [])
     _ => parseUrlPiece {a = List a} s |> map (\list => (length list ** fromList list))
 
+
+||| Convert a value to a URL piece or header.
 public export
 interface ToHttpApiData a where
+  ||| Convert a value to a URL piece.
   toUrlPiece : a -> String
 
+  ||| Convert a value to a header.
   toHeader : a -> String
   toHeader = toUrlPiece
 
+  ||| Convert a value to a query parameter.
   toQueryParam : a -> String
   toQueryParam = toUrlPiece
 

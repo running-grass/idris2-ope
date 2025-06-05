@@ -1,3 +1,4 @@
+||| Define the core of the server.
 module Pact.Server.Core
 
 import Pact.API
