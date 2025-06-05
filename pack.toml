@@ -2,19 +2,21 @@
 type = "local"
 path = "api"
 ipkg = "pact-api.ipkg"
-test = "test/test.ipkg"
 
 [custom.all.pact-wai]
 type = "local"
 path = "wai"
 ipkg = "pact-wai.ipkg"
-test = "test/test.ipkg"
 
 [custom.all.pact-server]
 type = "local"
 path = "server"
 ipkg = "pact-server.ipkg"
-test = "test/test.ipkg"
+
+[custom.all.pact-client]
+type = "local"
+path = "client"
+ipkg = "pact-client.ipkg"
 
 [custom.all.pact-todomvc]
 type = "local"

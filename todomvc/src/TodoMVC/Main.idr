@@ -19,6 +19,9 @@ record TodoId where
 implementation FromHttpApiData TodoId where
   parseUrlPiece = map MkTodoId . parseUrlPiece
 
+implementation ToHttpApiData TodoId where
+  toUrlPiece (MkTodoId n) = toUrlPiece n
+
 implementation Interpolation TodoId where
   interpolate (MkTodoId n) = "\{show n}"
 
@@ -82,6 +85,40 @@ routeGetTodo : RouteItem AppM
 routeGetTodo = ApiGetTodo :=> handlerGetTodo
 
 ApiPostTodo = StaticPath "todos" :/ ReqBody Todo :> Post JSONAccept Todo
+
+
+
+getLink_ : Component _ _ _  -> SnocList String-> SnocList String
+getLink_ (StaticPath path) acc = acc :< "/\{path}"
+getLink_ (Capture name ty) acc = acc :< "/\{name}"
+getLink_ (ReqBody _) acc = acc
+getLink_ (path :/ rest) acc = getLink_ rest (acc ++ getLink_ path acc)
+
+getLink : API ts -> String
+getLink (path :> _) = foldMap id $ getLink_ path [<]
+
+GetGenerateLinkFunType : Component _ _ _ -> Type
+GetGenerateLinkFunType (StaticPath path) = String
+GetGenerateLinkFunType (Capture name ty) = ty -> String
+GetGenerateLinkFunType (ReqBody _) = String
+GetGenerateLinkFunType (StaticPath path :/ rest) = GetGenerateLinkFunType rest
+GetGenerateLinkFunType (Capture name ty :/ rest) = ty -> GetGenerateLinkFunType rest
+GetGenerateLinkFunType (ReqBody _ :/ rest) = GetGenerateLinkFunType rest
+
+GetGenerateLinkByAPI : API ts -> Type
+GetGenerateLinkByAPI (path :> _) = GetGenerateLinkFunType path
+
+generateLink : (comp: Component t ts r) -> {auto allprf : All ToHttpApiData ts} -> GetGenerateLinkFunType comp
+generateLink (StaticPath path) = "/\{path}"
+generateLink (Capture name ty) {allprf = prf :: restPrf} = (\x: ty => toUrlPiece x)
+generateLink (ReqBody _) = ""
+generateLink (StaticPath path :/ rest) {allprf = prf :: restPrf} = generateLink rest
+generateLink (Capture name ty :/ rest) {allprf = prf :: restPrf} = (\x: ty => generateLink rest)
+generateLink (ReqBody _ :/ _) = assert_total $ idris_crash "ReqBody is not supported"
+
+
+generateLinkByAPI : (api: API ts) -> {auto allprf : All ToHttpApiData ts} -> GetGenerateLinkByAPI api
+generateLinkByAPI (path :> _) = generateLink path
 
 handlerPostTodo : Todo -> AppM Todo
 handlerPostTodo todo = do
