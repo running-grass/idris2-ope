@@ -22,8 +22,8 @@ modules = Pact.API.Operator,
           Pact.API.MimeRender,
           Pact.API.Accept,
           Pact.API.Core,
-          Pact.API.HasPathParam,
-          Pact.API.Util
+          Pact.API.Util,
+          Pact.API.HttpApiData
 
 -- main file (i.e. file to load at REPL)
 -- main =

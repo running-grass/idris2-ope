@@ -2,7 +2,7 @@ module Pact.API.Core
 
 import Pact.API.Operator
 import Data.Vect
-import Pact.API.HasPathParam
+import Pact.API.HttpApiData
 import Pact.API.Verb
 
 import Data.Vect.Quantifiers
@@ -43,7 +43,7 @@ record API (types: Vect n Type) where
   constructor (:>)
   path : Path lastType types reqBody
   verb : Verb
-  { auto prf : All HasPathParam types }
+  { auto prf : All FromHttpApiData types }
 
 ||| Get the name of a capture path segment
 ||| @ path The path to get the name of
