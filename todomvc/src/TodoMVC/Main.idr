@@ -16,10 +16,8 @@ record TodoId where
   constructor MkTodoId
   id : Nat 
 
-implementation HasPathParam TodoId where
-  parsePathParams s = case parsePositive s of
-    Just n => Just (MkTodoId n)
-    Nothing => Nothing
+implementation FromHttpApiData TodoId where
+  parseUrlPiece = map MkTodoId . parseUrlPiece
 
 implementation Interpolation TodoId where
   interpolate (MkTodoId n) = "\{show n}"

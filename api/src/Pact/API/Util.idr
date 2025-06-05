@@ -4,7 +4,7 @@ import Data.Vect
 import Data.Vect.Quantifiers
 
 import Pact.API.Operator
-import Pact.API.HasPathParam
+import Pact.API.HttpApiData
 import Pact.API.Core
 import Pact.API.Verb
 
@@ -16,29 +16,17 @@ import Pact.API.Verb
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchPath : Path t ts reqBody' -> Vect m String -> { auto allprf : All HasPathParam ts } -> Either String (HVect ts)
+matchPath : Path t ts reqBody' -> Vect m String -> { auto allprf : All FromHttpApiData ts } -> Either String (HVect ts)
 matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
 matchPath (ReqBody s) [] = Right [()]
-matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parsePathParams seg  of
-  Just val => Right [val]
-  Nothing => Left ("Failed to parse path parameter:" ++ s)
--- matchPath (ReqBody reqBody :/ restPath) segs { allprf = _ :: restPrf } = case matchPath restPath segs { allprf = restPrf } of
---   Right vals => Right (() :: vals)
---   Left err => Left err
-matchPath (path :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case mVal of
-  Just val => case matchPath restPath segs of
+matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parseUrlPiece seg  of
+  Right val => Right [val]
+  Left err => Left ("Failed to parse path parameter:" ++ s ++ " " ++ err)
+matchPath (path :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case parseUrlPiece seg of
+  Right val => case matchPath restPath segs of
     Right vals => Right (val :: vals)
     Left err => Left err
-  Nothing => Left ("Failed to parse path parameter:" ++ getCaptureName path)
-
--- case (path, mVal) of
---  (_, (Just val)) => case matchPath restPath segs of
---     Right vals => Right (val :: vals)
---     Left err => Left err
---   (_, Nothing) => Left ("Failed to parse path parameter:" ++ getCaptureName path)
-  where
-  mVal : Maybe t
-  mVal = parsePathParams seg
+  Left err => Left ("Failed to parse path parameter:" ++ getCaptureName path ++ " " ++ err)
 matchPath _ segs = Left ("unknown path" ++ show segs)
 
 ||| Get the type of the path.
