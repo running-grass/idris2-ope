@@ -16,10 +16,10 @@ brief = "Client generated for Pact API"
 depends = pact-api, http
 
 -- modules to install
-modules = Client
+modules = Pact.Client.Core, Pact.Client
 
 -- main file (i.e. file to load at REPL)
-main = Client
+main = Pact.Client
 
 -- name of executable
 executable = pact-client

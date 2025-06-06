@@ -1,7 +1,10 @@
-module Client
+module Pact.Client
 
 import Network.HTTP
 import Utils.String
+import public Pact.Client.Core
+import public Network.HTTP.URL
+import Data.Either
 
 import Control.Monad.Either
 
@@ -21,19 +24,21 @@ with_client client f = MkEitherT $ do
   close c
   pure (Right ok)
 
-url : String
+url2 : String
 -- url = "https://httpbin.org/html?t=哈哈"
-url = "https://www.mugeda.com/"
+url2 = "https://www.mugeda.com/"
 
 export
-test_redirect : EitherT String IO ()
-test_redirect = map_error show $ with_client {e=()} new_client_default $ \client => do
-  (response, content) <- request client GET (url' url) [] ()
+get : (url : URL) -> EitherT String IO String
+get url = map_error show $ with_client {e=()} new_client_default $ \client => do
+  (response, content) <- request client GET url [] ()
   content <- toList_ content
-  printLn . utf8_pack $ content
+  case utf8_pack content of
+    Nothing => pure "Failed to decode content"
+    Just content => pure content
 
 main: IO ()
 main = do
-  Right _ <- runEitherT test_redirect
+  Right _ <- runEitherT $ get (url' url2)
   | Left err => printLn err
   pure ()

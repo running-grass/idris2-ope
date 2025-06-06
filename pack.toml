@@ -22,3 +22,8 @@ ipkg = "pact-client.ipkg"
 type = "local"
 path = "todomvc"
 ipkg = "pact-todomvc.ipkg"
+
+[custom.all.pact-todomvc-client]
+type = "local"
+path = "todomvc"
+ipkg = "pact-todomvc-client.ipkg"

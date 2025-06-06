@@ -46,7 +46,7 @@ renderHeaders headers =
 public export
 renderResponse : Response -> String
 renderResponse (MkResponse status headers body) = 
-  let statusLine = "HTTP/1.1 \{status}\r\n"
+  let statusLine = "HTTP/1.1 \{status} \{statusMessage status}\r\n"
       bodyStr = maybe "" id body
   in statusLine ++ renderHeaders headers ++ "\r\n\r\n" ++ bodyStr
   

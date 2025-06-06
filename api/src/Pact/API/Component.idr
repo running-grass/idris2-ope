@@ -57,16 +57,17 @@ getCaptureName _ = "unknown"
 ||| Returns a list of the parsed path parameters.
 public export
 matchPath : Component t ts reqBody' -> Vect m String -> { auto allprf : All FromHttpApiData ts } -> Either String (HVect ts)
-matchPath (StaticPath s) [_] { allprf = prf :: restPrf } = Right [()]
+matchPath (StaticPath s) [seg] = if s == seg then Right [()] else Left "Path mismatch"
 matchPath (ReqBody s) [] = Right [()]
 matchPath (Capture s t) [seg] { allprf = prf :: restPrf } = case parseUrlPiece seg  of
   Right val => Right [val]
   Left err => Left ("Failed to parse path parameter:" ++ s ++ " " ++ err)
-matchPath (path :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case parseUrlPiece seg of
+matchPath (StaticPath s :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = if s == seg then map (\xs => () :: xs) (matchPath restPath segs) else Left "Path mismatch"
+matchPath (Capture s t :/ restPath) (seg :: segs) { allprf = prf :: restPrf } = case parseUrlPiece seg of
   Right val => case matchPath restPath segs of
     Right vals => Right (val :: vals)
     Left err => Left err
-  Left err => Left ("Failed to parse path parameter:" ++ getCaptureName path ++ " " ++ err)
+  Left err => Left ("Failed to parse path parameter:" ++ s ++ " " ++ err)
 matchPath _ segs = Left ("unknown path" ++ show segs)
 
 ||| Get the type of the path.

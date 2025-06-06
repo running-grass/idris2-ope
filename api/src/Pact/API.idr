@@ -9,7 +9,7 @@ import public Pact.API.HttpApiData
 import public Pact.API.Component
 
 import Data.Vect
-import Data.Vect.Quantifiers
+import public Data.Vect.Quantifiers
 
 public export
 record API (types: Vect n Type) where
