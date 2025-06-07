@@ -34,9 +34,9 @@ import Control.Monad.Error.Either
 |||
 ||| Returns a list of the parsed path parameters.
 public export
-matchAPI : API ts -> Vect m String -> Request -> Either String (HVect ts)
-matchAPI (path :> ep) segs req = if req.method == ep.method 
-                          then matchPath path segs 
+matchAPI : (api: API) -> Vect m String -> Request -> Either String (HVect api.types)
+matchAPI ((:>) { prf } path ep) segs req = if req.method == ep.method 
+                          then matchPath path segs { allprf = prf }
                           else Left "Method not allowed"
 
 matchRouteItem : {m : Type -> Type} -> RouteItem m -> Vect n String -> Request -> Bool
@@ -61,7 +61,7 @@ findOnRouter  : {m : Type -> Type} -> Router m -> Request -> Maybe (RouteItem m)
 findOnRouter (MkRouter routes) req = case strToVect req.uri of
   (n ** segs) => findRouteItem routes segs req
 
-applyHandler : (api : API tts) -> (params: HVect tts) -> Lazy (Either DecodingErr (ApiReqBody api)) -> (handler: GetHandlerType m api) -> Either String (GetEPFromAPI m api)
+applyHandler : (api : API) -> (params: HVect api.types) -> Lazy (Either DecodingErr (ApiReqBody api)) -> (handler: GetHandlerType m api) -> Either String (GetEPFromAPI m api)
 applyHandler ((StaticPath _) :> ep) [()] _ handler = Right handler
 applyHandler ((Capture _ t) :> ep) [param] _ handler = Right $ handler param
 applyHandler ((ReqBody reqType) :> ep) _ (Right reqBody) handler = Right $ handler reqBody

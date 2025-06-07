@@ -58,7 +58,7 @@ GetGenerateLinkFunType (Capture name ty :/ rest) = ty -> GetGenerateLinkFunType 
 GetGenerateLinkFunType (ReqBody _ :/ rest) = GetGenerateLinkFunType rest
 
 public export
-GetGenerateLinkByAPI : API ts -> Type
+GetGenerateLinkByAPI : API -> Type
 GetGenerateLinkByAPI (path :> _) = GetGenerateLinkFunType path
 
 generateLink : (comp: Component t ts r) -> {auto allprf : All ToHttpApiData ts} -> (acc: String) -> GetGenerateLinkFunType comp
@@ -70,6 +70,6 @@ generateLink (Capture name ty :/ rest) {allprf = prf :: restPrf} acc = (\x: ty =
 generateLink (ReqBody _ :/ _) acc = assert_total $ idris_crash "ReqBody is not supported"
 
 public export
-generateLinkByAPI : (api: API ts) -> {auto allprf : All ToHttpApiData ts} -> GetGenerateLinkByAPI api
+generateLinkByAPI : (api: API) -> {auto allprf : All ToHttpApiData api.types} -> GetGenerateLinkByAPI api
 generateLinkByAPI (path :> _) = generateLink path ""
 

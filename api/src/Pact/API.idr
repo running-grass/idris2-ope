@@ -12,14 +12,15 @@ import Data.Vect
 import public Data.Vect.Quantifiers
 
 public export
-record API (types: Vect n Type) where
+record API where
   constructor (:>)
+  { types : Vect typesLen Type }
+  { auto prf : All FromHttpApiData types }
   paths : Component lastType types reqBody
   verb : Verb
-  { auto prf : All FromHttpApiData types }
 
 public export
-ApiReqBody : API ts -> Type
+ApiReqBody : API -> Type
 ApiReqBody (path :> _) = PathReqBody path
 
 
@@ -31,7 +32,7 @@ ApiReqBody (path :> _) = PathReqBody path
 |||
 ||| Returns the type of the handler.
 public export
-GetHandlerType : (m : Type -> Type) -> API ts -> Type
+GetHandlerType : (m : Type -> Type) -> API -> Type
 GetHandlerType m (path :> ep) = GetPathType path $ (m (VerbResponse ep))
 
 ||| Get the type of the endpoint.
@@ -42,7 +43,7 @@ GetHandlerType m (path :> ep) = GetPathType path $ (m (VerbResponse ep))
 |||
 ||| Returns the type of the endpoint.
 public export
-GetEPFromAPI : (m : Type -> Type) -> API tss -> Type
+GetEPFromAPI : (m : Type -> Type) -> API -> Type
 GetEPFromAPI m (path :> ep) = m (VerbResponse ep)
 
 ||| Get the type of the endpoint result.
@@ -52,5 +53,5 @@ GetEPFromAPI m (path :> ep) = m (VerbResponse ep)
 |||
 ||| Returns the type of the endpoint result.
 public export
-GetEpResultTypeFromAPI : API ts -> Type
+GetEpResultTypeFromAPI : API -> Type
 GetEpResultTypeFromAPI (path :> ep) = VerbResponse ep

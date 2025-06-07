@@ -34,9 +34,8 @@ implementation Hoistable Handler where
 public export
 record RouteItem (m : Type -> Type) where
   constructor (:=>)
-  { paramsTypes : Vect paramsTypesLen Type}
   ||| API definition, describes path and endpoint
-  routeApi: API paramsTypes
+  routeApi: API
   ||| Handler function, type is determined by the API definition
   routeHandler : GetHandlerType m routeApi
   { auto mimeRenderProof : MimeRender (VerbAccept routeApi.verb) (VerbResponse routeApi.verb) }

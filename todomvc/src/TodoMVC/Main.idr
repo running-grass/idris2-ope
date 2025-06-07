@@ -70,7 +70,7 @@ implementation Hoistable AppM where
     pure a
 
 public export
-ApiGetTodos : API [()]
+ApiGetTodos : API
 ApiGetTodos = StaticPath "todos" :> Get JSONAccept (List Todo)
 
 handlerGetTodos : AppM (List Todo)
@@ -84,7 +84,7 @@ routeGetTodos : RouteItem AppM
 routeGetTodos = ApiGetTodos :=> handlerGetTodos
 
 public export
-ApiGetTodo : API [(), TodoId]
+ApiGetTodo : API
 ApiGetTodo = StaticPath "todos" :/ Capture "id" TodoId :> Get JSONAccept Todo
 
 handlerGetTodo : GetHandlerType AppM ApiGetTodo
@@ -94,7 +94,7 @@ routeGetTodo : RouteItem AppM
 routeGetTodo = ApiGetTodo :=> handlerGetTodo
 
 public export
-ApiPostTodo : API [(), ()]
+ApiPostTodo : API
 ApiPostTodo = StaticPath "todos" :/ ReqBody Todo :> Post JSONAccept Todo
 
 
