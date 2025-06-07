@@ -11,6 +11,7 @@ depends =
   , pact-api
   , pact-wai
   , pact-server
+  , pact-client
 
 main = TodoMVC.Main
 

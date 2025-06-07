@@ -12,12 +12,8 @@ import Data.Vect
 covering
 main : IO ()
 main = do
-  let url' = "http://localhost:2222" ++ (generateLinkByAPI ApiGetTodo $ MkTodoId 2)
-  case url_from_string url' of
-    Left err => printLn err
-    Right url => do
-      liftIO $ printLn url
-      Right content <- runEitherT $ get url
-      | Left err => printLn err
-      printLn content
-      pure ()
+  let r = (generateLinkByAPI ApiGetTodo $ MkTodoId 2)
+  Right content <- runEitherT r
+  | Left err => printLn err
+  printLn content
+  
