@@ -13,6 +13,8 @@ import Network.HTTP
 import Utils.String
 import public Network.HTTP.URL
 import Data.Either
+import Pact.API.Verb
+import Pact.API.MimeRender
 
 %hide  Utils.Streaming.infixl.(:>)
 
@@ -42,34 +44,37 @@ get url = map_error show $ with_client {e=()} new_client_default $ \client => do
     Just content => pure content
 
 export
-getPath : (path: String) -> Result String
-getPath p = do
+getPath : (path: String) -> (accept: Type) -> (t: Type) -> {auto prf: MimeUnrender accept t} -> Result t
+getPath p accept resType {prf} = do
   url' <- pure $ "http://localhost:2222" ++ p
   url <- MkEitherT . pure . url_from_string $ url'
-  get url
+  content <- get url
+  case mimeUnrender {ctype = accept} {a = resType} content of
+    Left err => throwE err
+    Right res => pure res
 
 public export
-GetGenerateLinkFunType : Component _ _ _ -> Type
-GetGenerateLinkFunType (StaticPath path) = Result String
-GetGenerateLinkFunType (Capture name ty) = ty -> Result String
-GetGenerateLinkFunType (ReqBody _) = Result String
-GetGenerateLinkFunType (StaticPath path :/ rest) = GetGenerateLinkFunType rest
-GetGenerateLinkFunType (Capture name ty :/ rest) = ty -> GetGenerateLinkFunType rest
-GetGenerateLinkFunType (ReqBody _ :/ rest) = GetGenerateLinkFunType rest
+GetGenerateLinkFunType : Component _ _ _ -> Type -> Type
+GetGenerateLinkFunType (StaticPath path) resType = Result resType
+GetGenerateLinkFunType (Capture name ty) resType = ty -> Result resType
+GetGenerateLinkFunType (ReqBody _) resType = Result resType
+GetGenerateLinkFunType (StaticPath path :/ rest) resType = GetGenerateLinkFunType rest resType
+GetGenerateLinkFunType (Capture name ty :/ rest) resType = ty -> GetGenerateLinkFunType rest resType
+GetGenerateLinkFunType (ReqBody _ :/ rest) resType = GetGenerateLinkFunType rest resType
 
 public export
 GetGenerateLinkByAPI : API -> Type
-GetGenerateLinkByAPI (path :> _) = GetGenerateLinkFunType path
+GetGenerateLinkByAPI (path :> verb) = GetGenerateLinkFunType path (VerbResponse verb)
 
-generateLink : (comp: Component t ts r) -> {auto allprf : All ToHttpApiData ts} -> (acc: String) -> GetGenerateLinkFunType comp
-generateLink (StaticPath path) acc = getPath "\{acc}/\{path}"
-generateLink (Capture name ty) {allprf = prf :: restPrf} acc = (\x: ty => getPath "\{acc}/\{toUrlPiece x}")
-generateLink (ReqBody _) acc = getPath acc
-generateLink (StaticPath path :/ rest) {allprf = prf :: restPrf} acc = generateLink rest $ "\{acc}/\{path}"
-generateLink (Capture name ty :/ rest) {allprf = prf :: restPrf} acc = (\x: ty => generateLink rest $ "\{acc}/\{toUrlPiece x}")
-generateLink (ReqBody _ :/ _) acc = assert_total $ idris_crash "ReqBody is not supported"
+generateLink : (comp: Component t ts r) -> {auto allprf : All ToHttpApiData ts} -> (acc: String) -> (accept: Type) -> (resType: Type) -> {auto prf: MimeUnrender accept resType} -> GetGenerateLinkFunType comp resType
+generateLink (StaticPath path) acc accept resType = getPath "\{acc}/\{path}" accept resType
+generateLink (Capture name ty) {allprf = prf :: restPrf} acc accept resType = (\x: ty => getPath "\{acc}/\{toUrlPiece x}" accept resType)
+generateLink (ReqBody _) acc accept resType = getPath acc accept resType
+generateLink (StaticPath path :/ rest) {allprf = prf :: restPrf} acc accept resType = generateLink rest  "\{acc}/\{path}" accept resType
+generateLink (Capture name ty :/ rest) {allprf = prf :: restPrf} acc accept resType = (\x: ty => generateLink rest "\{acc}/\{toUrlPiece x}" accept resType)
+generateLink (ReqBody _ :/ _) acc accept resType = assert_total $ idris_crash "ReqBody is not supported"
 
 public export
-generateLinkByAPI : (api: API) -> {auto allprf : All ToHttpApiData api.types} -> GetGenerateLinkByAPI api
-generateLinkByAPI (path :> _) = generateLink path ""
+generateLinkByAPI : (api: API) -> {allprf : All ToHttpApiData api.types} -> {verbPrf: MimeUnrender (VerbAccept api.verb) (VerbResponse api.verb)} -> GetGenerateLinkByAPI api
+generateLinkByAPI (path :> verb) = generateLink path "" (VerbAccept verb) (VerbResponse verb)
 

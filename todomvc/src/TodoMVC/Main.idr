@@ -10,36 +10,8 @@ import Control.Monad.Either
 import Control.Monad.State
 import Control.Monad.Writer
 
-%language ElabReflection
-
-public export
-record TodoId where
-  constructor MkTodoId
-  id : Nat 
-
-public export
-implementation FromHttpApiData TodoId where
-  parseUrlPiece = map MkTodoId . parseUrlPiece
-
-public export
-implementation ToHttpApiData TodoId where
-  toUrlPiece (MkTodoId n) = toUrlPiece n
-
-public export
-implementation Interpolation TodoId where
-  interpolate (MkTodoId n) = "\{show n}"
-
-%runElab derive "TodoId" [Show,Eq,ToJSON, FromJSON]
-
-public export
-record Todo where
-  constructor MkTodo
-  id : TodoId
-  title : String
-  completed : Bool
-
-%runElab derive "Todo" [Show,Eq,ToJSON, FromJSON]
-
+import TodoMVC.Data
+import TodoMVC.Api
 
 todos : List Todo
 todos = [ 
@@ -69,9 +41,6 @@ implementation Hoistable AppM where
     liftIO $ putStrLn "Hoisted \{show n}"
     pure a
 
-public export
-ApiGetTodos : API
-ApiGetTodos = StaticPath "todos" :> Get JSONAccept (List Todo)
 
 handlerGetTodos : AppM (List Todo)
 handlerGetTodos = do
@@ -83,9 +52,6 @@ handlerGetTodos = do
 routeGetTodos : RouteItem AppM
 routeGetTodos = ApiGetTodos :=> handlerGetTodos
 
-public export
-ApiGetTodo : API
-ApiGetTodo = StaticPath "todos" :/ Capture "id" TodoId :> Get JSONAccept Todo
 
 handlerGetTodo : GetHandlerType AppM ApiGetTodo
 handlerGetTodo id = pure $ MkTodo id "Todo \{id}" False
@@ -93,9 +59,6 @@ handlerGetTodo id = pure $ MkTodo id "Todo \{id}" False
 routeGetTodo : RouteItem AppM
 routeGetTodo = ApiGetTodo :=> handlerGetTodo
 
-public export
-ApiPostTodo : API
-ApiPostTodo = StaticPath "todos" :/ ReqBody Todo :> Post JSONAccept Todo
 
 
 handlerPostTodo : Todo -> AppM Todo
