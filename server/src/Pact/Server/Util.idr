@@ -61,13 +61,13 @@ findOnRouter  : {m : Type -> Type} -> Router m -> Request -> Maybe (RouteItem m)
 findOnRouter (MkRouter routes) req = case strToVect req.uri of
   (n ** segs) => findRouteItem routes segs req
 
-applyHandler : (api : API tts) -> (params: HVect tts) -> Lazy (Either DecodingErr (ApiReqBody api)) -> { auto allprf: All FromHttpApiData tts} -> (handler: GetHandlerType m api) -> Either String (GetEPFromAPI m api)
+applyHandler : (api : API tts) -> (params: HVect tts) -> Lazy (Either DecodingErr (ApiReqBody api)) -> (handler: GetHandlerType m api) -> Either String (GetEPFromAPI m api)
 applyHandler ((StaticPath _) :> ep) [()] _ handler = Right handler
 applyHandler ((Capture _ t) :> ep) [param] _ handler = Right $ handler param
 applyHandler ((ReqBody reqType) :> ep) _ (Right reqBody) handler = Right $ handler reqBody
 applyHandler ((ReqBody reqType) :> ep) _ (Left err) handler = Left $ "parse error: \{show err}"
-applyHandler (((StaticPath _) :/ path') :> ep) (param :: params) reqBody { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody handler
-applyHandler (((Capture _ t) :/ path') :> ep) (param :: params) reqBody { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody $ handler param
+applyHandler ((:>) ((StaticPath _) :/ path')  ep { prf = prf' :: prfs}) (param :: params) reqBody handler = applyHandler {m} (path' :> ep) params reqBody handler
+applyHandler ((:>) ((Capture _ t) :/ path')  ep { prf = prf' :: prfs}) (param :: params) reqBody handler = applyHandler {m} (path' :> ep) params reqBody $ handler param
 -- applyHandler (((ReqBody reqType) :/ path') :> ep) (_ :: params) reqBody@(Just reqBody')  { allprf = prf :: prfs} handler = applyHandler {m} (path' :> ep) params reqBody $ handler reqBody'
 applyHandler _ _ _ _ = Left "Invalid request"
 
@@ -106,7 +106,7 @@ serve router req = accumAsString req.body >>= hand
   where
   hand : String -> HTTPResponse
   hand reqBody = case findOnRouter router req of
-    Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } { reqBodyProof }) => case (applyHandlerWithRequest routeItem req reqBody) of
+    Just routeItem@((:=>) api@(path :> verb) handler { mimeRenderProof } ) => case (applyHandlerWithRequest routeItem req reqBody) of
       Right ioRes => (liftIO . runEitherT . hoist {m} $ ioRes ) >>= \case 
         Right res => emitResponse verb res
         Left err => throw err
